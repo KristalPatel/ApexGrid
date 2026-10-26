@@ -1,0 +1,34 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { getTable } from '../api.js'
+import { TEAM_THEMES } from '../config/appConfig.js'
+
+export default function Drivers() {
+  const [rows, setRows] = useState([])
+  useEffect(() => { getTable('driver').then(setRows) }, [])
+
+  return (
+    <div className="page container">
+      <p className="eyebrow">2025 grid</p>
+      <h1 className="page-title">Drivers</h1>
+      <p className="page-sub" style={{ marginBottom: 36 }}>Click a driver to see their page in their team colours.</p>
+      <div className="grid cols-4">
+        {rows.map((d, i) => (
+          <motion.div key={d.driver_id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+            <Link
+              to={`/drivers/${d.driver_id}`}
+              className="card"
+              style={{ display: 'block', borderTop: `3px solid ${TEAM_THEMES[d.team_name] || 'var(--accent)'}` }}
+            >
+              <span className="pill">{d.driver_code}</span>
+              <h3 style={{ marginTop: 10 }}>{d.full_name}</h3>
+              <p className="meta">{d.team_name} · {d.nationality}</p>
+              <p className="meta" style={{ marginTop: 10 }}>{d.wins} wins · {d.points} pts</p>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  )
+}
