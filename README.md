@@ -34,3 +34,4 @@ Open the address it prints. Demo logins:
 - Frontend owner: `/frontend`. Backend and database owner: `/backend` and `/database`.
 - Never commit `.env`. Share it privately.
 - Mock data in `frontend/src/data/mockData.js` is placeholder only.
+# ApexGrid
