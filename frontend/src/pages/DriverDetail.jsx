@@ -28,7 +28,7 @@ export default function DriverDetail() {
             <div><span>Code</span><b>{d.driver_code}</b></div>
           </div>
         </div>
-        <div className="portrait">{d.driver_code}</div>
+        <DriverPortrait code={d.driver_code} name={d.full_name} />
       </div>
     </div>
   )

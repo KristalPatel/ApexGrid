@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { getHome } from '../api.js'
 import Counter from '../components/Counter.jsx'
+import DriverPortrait from '../components/DriverPortrait.jsx'
 
 const fade = {
   initial: { opacity: 0, y: 50 },
@@ -56,7 +57,9 @@ export default function Home() {
                 </div>
                 <Link to="/drivers" className="btn">Know more</Link>
               </motion.div>
-              <motion.div {...fade} className="portrait">{data.champion.driver_code}</motion.div>
+              <motion.div {...fade}>
+  <DriverPortrait code={data.champion.driver_code} name={data.champion.full_name} />
+</motion.div>
             </div>
           </section>
 
