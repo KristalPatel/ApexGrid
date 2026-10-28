@@ -6,7 +6,7 @@ import pool from './db.js'
 import { TABLES, AGGREGATES, OPERATORS, JOIN_TYPES, okTable, okColumn, okIn } from './allowed.js'
 
 const app = express()
-app.use(cors())
+app.use(cors({ origin: process.env.FRONTEND_URL || true }))
 app.use(express.json())
 
 // Small wrapper so every route returns a clean error instead of crashing.
@@ -108,7 +108,7 @@ app.get('/api/filter', route(async (req) => {
 app.get('/api/join', route(async (req) => {
   const type = okIn(JOIN_TYPES, req.query.type, 'Join type')
   const [rows] = await pool.query(
-    `SELECT d.full_name AS driver, t.team_name AS team, t.team_chief
+    `SELECT d.first_name AS driver, t.team_name AS team, t.team_chief
        FROM driver d ${type} team t ON d.team_name = t.team_name`
   )
   return rows
