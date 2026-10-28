@@ -10,6 +10,8 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
+  // Cloud databases need SSL. Locally this stays off.
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
 })
 
 export default pool
