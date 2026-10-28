@@ -25,14 +25,24 @@ function load() {
   try { return JSON.parse(localStorage.getItem('apexgrid_user')) } catch { return null }
 }
 
+// Guards for protected areas. Public pages never go through these.
+function RequireAuth({ user, children }) {
+  return user ? children : <Navigate to="/login" replace />
+}
+function RequireDBA({ user, children }) {
+  if (!user) return <Navigate to="/login" replace />
+  return user.role === 'DBA' ? children : <Navigate to="/" replace />
+}
+
 export default function App() {
   const [user, setUser] = useState(load)
   const [showCar, setShowCar] = useState(false)
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  // Smooth, inertial scrolling
+  // Smooth, inertial scrolling (skipped when the visitor prefers reduced motion)
   useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
     const lenis = new Lenis()
     let id
     const raf = (t) => { lenis.raf(t); id = requestAnimationFrame(raf) }
@@ -56,7 +66,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('apexgrid_user')
     setUser(null)
-    navigate('/login')
+    navigate('/') // public homepage, not the login page
   }
 
   const isAdminArea = pathname.startsWith('/admin')
@@ -65,39 +75,35 @@ export default function App() {
     <>
       <AnimatePresence>{showCar && <CarTransition key="car" />}</AnimatePresence>
 
-      {user && !isAdminArea && <Navbar user={user} onLogout={handleLogout} />}
+      {!isAdminArea && <Navbar user={user} onLogout={handleLogout} />}
 
       <Routes>
         <Route path="/login" element={user && !showCar ? <Navigate to="/" /> : <Login onSuccess={handleLogin} />} />
 
-        {!user ? (
-          <Route path="*" element={<Navigate to="/login" />} />
-        ) : (
-          <>
-            <Route path="/" element={<Home />} />
-            <Route path="/drivers" element={<Drivers />} />
-            <Route path="/drivers/:id" element={<DriverDetail />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/races" element={<Races />} />
-            <Route path="/circuits" element={<Circuits />} />
-            <Route path="/circuits/:id" element={<CircuitDetail />} />
+        {/* Public */}
+        <Route path="/" element={<Home />} />
+        <Route path="/drivers" element={<Drivers />} />
+        <Route path="/drivers/:id" element={<DriverDetail />} />
+        <Route path="/teams" element={<Teams />} />
+        <Route path="/races" element={<Races />} />
+        <Route path="/circuits" element={<Circuits />} />
+        <Route path="/circuits/:id" element={<CircuitDetail />} />
 
-            {user.role === 'DBA' ? (
-              <Route path="/admin" element={<AdminLayout user={user} onLogout={handleLogout} />}>
-                <Route index element={<Dashboard />} />
-                <Route path="manage" element={<ManageData />} />
-                <Route path="analytics" element={<Analytics />} />
-                <Route path="queries" element={<QueryBuilder />} />
-                <Route path="index-lab" element={<IndexLab />} />
-                <Route path="views" element={<Views />} />
-                <Route path="xml" element={<XmlExport />} />
-              </Route>
-            ) : (
-              <Route path="/admin/*" element={<Navigate to="/" />} />
-            )}
-            <Route path="*" element={<Navigate to="/" />} />
-          </>
-        )}
+        {/* Protected: DBA only */}
+        <Route
+          path="/admin"
+          element={<RequireDBA user={user}><AdminLayout user={user} onLogout={handleLogout} /></RequireDBA>}
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="manage" element={<ManageData />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="queries" element={<QueryBuilder />} />
+          <Route path="index-lab" element={<IndexLab />} />
+          <Route path="views" element={<Views />} />
+          <Route path="xml" element={<XmlExport />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </>
   )

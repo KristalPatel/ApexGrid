@@ -1,0 +1,143 @@
+/* Homepage only. Every selector is scoped to a .home-* / .race-start-* class
+   or to a modifier of an existing class, so other pages are unaffected. */
+:root { --papaya: #ff8000; --papaya-glow: rgba(255, 128, 0, 0.35); }
+
+/* Navbar over the hero */
+.nav.nav--hero { background: linear-gradient(180deg, rgba(0,0,0,.65), transparent); backdrop-filter: none; border-bottom-color: transparent; }
+.nav { transition: background .3s, border-color .3s; }
+.nav .btn.small { display: inline-block; clip-path: none; }
+
+.home { background: var(--bg); overflow-x: clip; }
+.home-kicker { color: var(--accent); font-family: var(--font-head); letter-spacing: .28em; font-size: 14px; text-transform: uppercase; }
+.home-kicker--papaya { color: var(--papaya); }
+.home-display { font-size: clamp(52px, 9vw, 130px); font-weight: 800; line-height: .92; margin: 12px 0; }
+.home-display em { color: var(--accent); font-style: normal; }
+.home-lead { color: var(--muted); font-size: 18px; line-height: 1.6; max-width: 520px; margin: 14px 0; }
+.home-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 28px; }
+.home-actions--center { justify-content: center; }
+.home-actions .btn { display: inline-block; text-align: center; }
+.home-actions .btn.ghost { clip-path: none; }
+.btn.btn--papaya { background: var(--papaya); color: #0b0b0d; }
+.btn.btn--papaya:hover { box-shadow: 0 0 28px var(--papaya-glow); }
+.home-stats { display: flex; gap: 40px; flex-wrap: wrap; margin: 26px 0 4px; }
+.home-stats span { display: block; color: var(--muted); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+.home-stats b { font-family: var(--font-head); font-size: 44px; }
+
+/* Intro overlay */
+.race-start-overlay { position: fixed; inset: 0; z-index: 1000; background: #000; display: grid; place-items: center; overflow: hidden; }
+.race-start-video { width: 100%; height: 100%; object-fit: cover; }
+.race-start-fallback { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 36px; background: radial-gradient(ellipse at 50% 40%, #16060a, #000 70%); }
+.race-start-logo { font-size: clamp(36px, 6vw, 64px); }
+.race-start-gantry { display: flex; gap: clamp(10px, 2.5vw, 28px); padding: 18px 26px; background: #0c0c0f; border: 1px solid var(--line); border-radius: 14px; }
+.race-start-column { display: flex; flex-direction: column; gap: 10px; padding: 8px; background: #050506; border-radius: 10px; }
+.race-start-light { width: clamp(24px, 5vw, 52px); aspect-ratio: 1; border-radius: 50%; background: #2a0a0c; transition: background .08s, box-shadow .08s; }
+.race-start-light.on { background: #ff1a10; box-shadow: 0 0 26px 6px rgba(255, 26, 16, .65); }
+.race-start-caption { height: 20px; color: var(--muted); letter-spacing: .4em; font-family: var(--font-head); font-size: 16px; }
+.race-start-car { position: absolute; top: 62%; left: 0; width: min(420px, 70vw); }
+.race-start-car svg { width: 100%; height: auto; }
+.race-start-flash { position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent); pointer-events: none; }
+.race-start-skip { position: absolute; right: 24px; bottom: 24px; background: rgba(0,0,0,.5); color: var(--text); }
+
+
+/* Section 1: champion */
+.home-champion { position: relative; min-height: 100vh; display: flex; align-items: center; padding: 100px 0 80px; overflow: hidden; background: #050506; }
+.home-champion__light { position: absolute; width: 720px; height: 720px; border-radius: 50%; pointer-events: none; }
+.home-champion__light--red { top: -200px; left: -260px; background: radial-gradient(circle, var(--accent-glow), transparent 65%); }
+.home-champion__light--papaya { bottom: -260px; right: -200px; background: radial-gradient(circle, var(--papaya-glow), transparent 65%); }
+.home-champion__grid { position: relative; width: 100%; max-width: 1600px; margin: 0 auto; padding: 0 40px; display: grid; grid-template-columns: 1fr minmax(340px, 560px) 1fr; gap: 40px; align-items: center; }
+.home-champion__side--right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.home-champion__title { font-size: clamp(56px, 8vw, 130px); font-weight: 800; line-height: .88; margin: 14px 0 6px; }
+.home-champion__title span, .home-champion__title em { display: block; }
+.home-champion__title em { color: var(--papaya); font-style: normal; }
+.home-champion__meta { color: var(--muted); letter-spacing: .18em; text-transform: uppercase; font-size: 13px; }
+.home-champion__side--right .home-actions { justify-content: flex-end; }
+.home-champion__hint { margin-top: 22px; color: var(--muted); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+
+.home-champion__stage { position: relative; width: 100%; aspect-ratio: 4 / 5; max-height: 78vh; margin: 0 auto; cursor: none; touch-action: pan-y; user-select: none; border-radius: 18px; }
+.home-champion__stage.is-full { cursor: default; }
+.home-champion__stage:focus-visible { outline: 2px solid var(--papaya); outline-offset: 6px; }
+/* Seamless blend: edges of the photo fade into the page background */
+.home-champion__frame { position: absolute; inset: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 22%, #000 78%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 22%, #000 78%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  -webkit-mask-composite: source-in; mask-composite: intersect; }
+.home-champion__img, .home-champion__reveal { position: absolute; inset: 0; width: 100%; height: 100%; }
+.home-champion__img { object-fit: cover; object-position: top center; pointer-events: none; }
+.home-champion__img.is-dim { filter: grayscale(1) brightness(.5) contrast(1.1); }
+.home-champion__reveal { pointer-events: none; will-change: mask-image; }
+.home-champion__code { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-head); font-size: 140px; color: var(--accent); font-weight: 800; }
+.home-champion__label { position: absolute; z-index: 2; left: 50%; bottom: 10px; transform: translateX(-50%); font-family: var(--font-head); letter-spacing: .3em; font-size: 13px; text-transform: uppercase; color: var(--papaya); opacity: .6; transition: opacity .4s; white-space: nowrap; }
+.home-champion__label.on { opacity: 1; }
+.home-champion__toggle { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; background: transparent; border: 1px solid var(--line); color: var(--text); padding: 10px 18px; border-radius: 99px; font-family: var(--font-head); letter-spacing: .14em; text-transform: uppercase; font-size: 15px; transition: border-color .25s, background .25s; }
+.home-champion__toggle:hover, .home-champion__toggle[aria-pressed='true'] { border-color: var(--papaya); background: rgba(255,128,0,.08); }
+.home-champion__toggle-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--papaya); }
+.home-scroll { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; letter-spacing: .35em; text-transform: uppercase; }
+.home-scroll i { width: 1px; height: 34px; background: linear-gradient(var(--text), transparent); }
+
+
+/* Section 2: constructors */
+.home-constructors { position: relative; min-height: 100vh; display: flex; align-items: center; padding: 100px 0; overflow: hidden; background: #08080a; }
+.home-constructors__garage { position: absolute; inset: 0 40% 0 0; }
+.home-constructors__garage img { width: 100%; height: 100%; object-fit: cover; opacity: .45; mask-image: linear-gradient(90deg, #000 40%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent); }
+.home-constructors__glow { position: absolute; inset: 0; background: radial-gradient(ellipse at 80% 60%, var(--papaya-glow), transparent 60%); pointer-events: none; }
+.home-constructors__inner { position: relative; display: grid; grid-template-columns: 1fr 1.1fr; gap: 40px; align-items: center; }
+.home-constructors .home-display { color: var(--text); }
+.home-season { font-family: var(--font-head); font-size: 26px; letter-spacing: .2em; color: var(--papaya); text-transform: uppercase; }
+.home-constructors__car img { width: 100%; height: auto; display: block; }
+
+/* Section 3: race transition */
+.home-race-transition { position: relative; height: 90vh; min-height: 520px; overflow: hidden; background: linear-gradient(180deg, #08080a, #000 30%, #000 70%, #050304); display: grid; place-items: center; }
+.home-streak { position: absolute; left: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(255,128,0,.8), rgba(255,255,255,.9)); will-change: transform; }
+.home-pass-car { position: absolute; left: 0; will-change: transform; }
+.home-pass-car img { width: 100%; height: auto; display: block; }
+.home-race-transition__title { position: relative; z-index: 5; text-align: center; text-shadow: 0 6px 40px #000; }
+.home-race-transition__line { position: absolute; left: 0; right: 0; bottom: 0; height: 160px; background: linear-gradient(180deg, transparent, #0a0a0c); }
+
+/* Section 4: world of racing */
+.home-world { position: relative; padding: 110px 0; background: #0a0a0c; overflow: hidden; }
+.home-world__stage { position: relative; display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; align-items: center; margin-top: 30px; }
+.home-track { width: 100%; height: auto; overflow: visible; }
+.home-track__base { fill: none; stroke: #23232b; stroke-width: 18; stroke-linejoin: round; stroke-linecap: round; }
+.home-track__glow { fill: none; stroke: var(--papaya); stroke-width: 6; opacity: .55; stroke-linejoin: round; }
+.home-track__line { fill: none; stroke: #ff5a1f; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.home-track__dot { fill: #fff; }
+.home-track__dot-halo { fill: rgba(255, 128, 0, .35); }
+.home-track__note { grid-column: 1; color: var(--muted); font-size: 12px; margin-top: -10px; }
+.home-gp { grid-column: 2; grid-row: 1; background: rgba(20,20,24,.85); border: 1px solid var(--line); border-radius: 12px; padding: 26px; }
+.home-gp__label { color: var(--papaya); font-family: var(--font-head); letter-spacing: .25em; font-size: 13px; text-transform: uppercase; margin-bottom: 8px; }
+.home-gp h3 { font-size: 38px; margin-bottom: 14px; }
+.home-gp dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.home-gp dt { color: var(--muted); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; }
+.home-gp__picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.home-gp__picker button { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 6px 12px; border-radius: 99px; font-size: 13px; }
+.home-gp__picker button.on, .home-gp__picker button:hover { color: var(--text); border-color: var(--papaya); }
+.home-gp__empty { color: var(--muted); }
+
+/* Section 5: final + footer */
+.home-final { position: relative; padding: 140px 0; text-align: center; background: #050506; overflow: hidden; }
+.home-final__glow { position: absolute; left: 50%; top: 50%; width: 800px; height: 800px; transform: translate(-50%, -50%); background: radial-gradient(circle, var(--accent-glow), transparent 65%); pointer-events: none; }
+.home-final__inner { position: relative; }
+.home-final .home-lead { margin-left: auto; margin-right: auto; }
+.home-footer { border-top: 1px solid var(--line); background: #050506; padding: 28px 0; }
+.home-footer__inner { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.home-footer nav { display: flex; gap: 24px; flex-wrap: wrap; }
+.home-footer nav a, .home-footer nav button { background: none; border: 0; color: var(--muted); font-family: var(--font-head); letter-spacing: .12em; text-transform: uppercase; font-size: 16px; }
+.home-footer nav a:hover, .home-footer nav button:hover { color: var(--text); }
+
+@media (max-width: 800px) {
+    .home-constructors__inner, .home-world__stage { grid-template-columns: 1fr; }
+  .home-champion__grid { grid-template-columns: 1fr; padding: 0 24px; gap: 24px; }
+  .home-champion__stage { order: -1; max-width: 420px; cursor: default; }
+  .home-champion__side--right { text-align: left; align-items: flex-start; }
+  .home-champion__side--right .home-actions { justify-content: flex-start; }
+  .home-champion__hint { display: none; }
+  .home-constructors__garage { inset: 0; }
+  .home-gp, .home-track__note { grid-column: 1; grid-row: auto; }
+  .home-race-transition { height: 70vh; }
+  .home-pass-car--extra, .home-streak--extra { display: none; }
+  .home-champion__light, .home-final__glow { width: 420px; height: 420px; }
+  .nav .btn.small { padding: 6px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-champion__img, .home-champion__label { transition: none !important; }
+}

@@ -1,138 +1,94 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { getHome } from '../api.js'
-import Counter from '../components/Counter.jsx'
-import DriverPortrait from '../components/DriverPortrait.jsx'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import { getHome, getTable } from '../api.js'
+import RaceStartIntro from '../components/home/RaceStartIntro.jsx'
+import HeroChampion from '../components/home/HeroChampion.jsx'
+import Constructors from '../components/home/Constructors.jsx'
+import RaceTransition from '../components/home/RaceTransition.jsx'
+import WorldOfRacing from '../components/home/WorldOfRacing.jsx'
+import FinalPaddock from '../components/home/FinalPaddock.jsx'
+import '../home.css'
 
-const fade = {
-  initial: { opacity: 0, y: 50 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-100px' },
-  transition: { duration: 0.8, ease: 'easeOut' },
+const SEEN_KEY = 'apexgrid_intro_seen'
+
+function introShouldPlay() {
+  try {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false
+    return sessionStorage.getItem(SEEN_KEY) !== '1'
+  } catch { return true }
 }
 
 export default function Home() {
-  const [data, setData] = useState(null)
-  useEffect(() => { getHome().then(setData) }, [])
+  const [home, setHome] = useState(null)
+  const [tables, setTables] = useState({ driver: [], race: [], circuit: [] })
+  const [intro, setIntro] = useState(introShouldPlay)
+
+  // All data comes through the existing API layer. Failures fall back to empty states.
+  useEffect(() => {
+    let alive = true
+    Promise.allSettled([getHome(), getTable('driver'), getTable('race'), getTable('circuit')]).then(([h, d, r, c]) => {
+      if (!alive) return
+      if (h.status === 'fulfilled') setHome(h.value)
+      setTables({
+        driver: d.status === 'fulfilled' && Array.isArray(d.value) ? d.value : [],
+        race: r.status === 'fulfilled' && Array.isArray(r.value) ? r.value : [],
+        circuit: c.status === 'fulfilled' && Array.isArray(c.value) ? c.value : [],
+      })
+    })
+    return () => { alive = false }
+  }, [])
+
+  // Lock page scroll while the intro is on screen
+  useEffect(() => {
+    if (!intro) return undefined
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [intro])
+
+  const finishIntro = useCallback(() => {
+    try { sessionStorage.setItem(SEEN_KEY, '1') } catch { /* private mode */ }
+    setIntro(false)
+  }, [])
+  const replayIntro = useCallback(() => {
+    window.scrollTo(0, 0)
+    setIntro(true)
+  }, [])
+
+  const champion = home?.champion || null
+  const team = home?.constructorChampion || null
+
+  // Resolve a driver route only when the data supports it
+  const driverId = useMemo(() => {
+    if (!champion) return null
+    if (champion.driver_id != null) return champion.driver_id
+    const m = tables.driver.find((d) => d.driver_code === champion.driver_code || d.full_name === champion.full_name)
+    return m?.driver_id ?? null
+  }, [champion, tables.driver])
+
+  // Season label comes from race dates if available
+  const season = useMemo(() => {
+    const years = tables.race.map((r) => String(r.race_date || '').slice(0, 4)).filter((y) => /^\d{4}$/.test(y))
+    return years.length ? years.sort().pop() : null
+  }, [tables.race])
+
+  // Featured-circuit options: circuits joined to their latest race, by name
+  const options = useMemo(() => {
+    return tables.circuit.slice(0, 4).map((c) => {
+      const races = tables.race.filter((r) => r.circuit_name === c.circuit_name)
+      const race = races.sort((a, b) => String(b.race_date).localeCompare(String(a.race_date)))[0]
+      return { key: c.circuit_id ?? c.circuit_name, ...c, race_name: race?.race_name, race_date: race?.race_date }
+    })
+  }, [tables.circuit, tables.race])
 
   return (
-    <div>
-      {/* 1. Intro */}
-      <section className="scene">
-        <div className="glow" style={{ top: '5%', left: '-200px' }} />
-        <div className="container">
-          <motion.p className="eyebrow" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            Season 2025
-          </motion.p>
-          <motion.h1 className="hero-title" initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
-            Welcome to <em>Apex</em>Grid
-          </motion.h1>
-          <motion.p className="page-sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}>
-            Every driver, every team, every lap. Ready to explore?
-          </motion.p>
-          <motion.p
-            className="scroll-hint"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.8 }}
-          >
-            Scroll to explore ↓
-          </motion.p>
-        </div>
-      </section>
-
-      {data && (
-        <>
-          {/* 2. Reigning champion */}
-          <section className="scene">
-            <div className="glow" style={{ top: '10%', right: '-250px' }} />
-            <div className="container champ-grid">
-              <motion.div {...fade}>
-                <p className="eyebrow">Reigning world champion</p>
-                <h2 className="page-title">{data.champion.full_name}</h2>
-                <div className="stat-row">
-                  <div><span>Wins</span><b>{data.champion.wins}</b></div>
-                  <div><span>Points</span><b>{data.champion.points}</b></div>
-                  <div><span>Team</span><b>{data.champion.team_name}</b></div>
-                </div>
-                <Link to="/drivers" className="btn">Know more</Link>
-              </motion.div>
-              <motion.div {...fade}>
-  <DriverPortrait code={data.champion.driver_code} name={data.champion.full_name} />
-</motion.div>
-            </div>
-          </section>
-
-          {/* 3. Constructors' champion */}
-          <section className="scene" style={{ background: 'var(--bg-2)' }}>
-            <div className="container">
-              <motion.div {...fade}>
-                <p className="eyebrow">Constructors&apos; champion</p>
-                <h2 className="page-title">{data.constructorChampion.team_name}</h2>
-                <div className="stat-row">
-                  <div><span>Points</span><b>{data.constructorChampion.points}</b></div>
-                  <div><span>Wins</span><b>{data.constructorChampion.wins}</b></div>
-                  <div><span>Team chief</span><b>{data.constructorChampion.team_chief}</b></div>
-                </div>
-                <Link to="/teams" className="btn ghost">See all teams</Link>
-              </motion.div>
-            </div>
-          </section>
-
-          {/* 4. Counters */}
-          <section className="scene">
-            <div className="container">
-              <motion.p className="eyebrow" {...fade}>The season in numbers</motion.p>
-              <div className="grid cols-4" style={{ marginTop: 30 }}>
-                {data.counters.map((c, i) => (
-                  <motion.div key={c.label} className="card" {...fade} transition={{ ...fade.transition, delay: i * 0.12 }}>
-                    <div className="big-number"><Counter to={c.value} /></div>
-                    <p className="meta">{c.label}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* 5. Season records */}
-          <section className="scene" style={{ background: 'var(--bg-2)' }}>
-            <div className="container">
-              <motion.p className="eyebrow" {...fade}>Season records</motion.p>
-              <div className="grid cols-3" style={{ marginTop: 30 }}>
-                {data.records.map((r, i) => (
-                  <motion.div key={r.label} className="card" {...fade} transition={{ ...fade.transition, delay: i * 0.12 }}>
-                    <p className="meta">{r.label}</p>
-                    <div className="big-number">{r.value}</div>
-                    <p className="meta">{r.note}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* 6. Explore */}
-          <section className="scene">
-            <div className="container">
-              <motion.p className="eyebrow" {...fade}>Explore</motion.p>
-              <div className="grid cols-4" style={{ marginTop: 30 }}>
-                {[
-                  ['/drivers', 'Drivers', 'Stats, wins and points'],
-                  ['/teams', 'Teams', 'Constructors and chiefs'],
-                  ['/races', 'Races', 'Every round and its winner'],
-                  ['/circuits', 'Circuits', 'Tracks around the world'],
-                ].map(([to, title, text], i) => (
-                  <motion.div key={to} {...fade} transition={{ ...fade.transition, delay: i * 0.1 }}>
-                    <Link to={to} className="card" style={{ display: 'block' }}>
-                      <h3>{title}</h3>
-                      <p className="meta">{text}</p>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </section>
-        </>
-      )}
+    <div className="home">
+      <AnimatePresence>{intro && <RaceStartIntro key="intro" onDone={finishIntro} />}</AnimatePresence>
+      <HeroChampion champion={champion} driverId={driverId} />
+      <Constructors team={team} season={season} />
+      <RaceTransition />
+      <WorldOfRacing options={options} />
+      <FinalPaddock onReplayIntro={replayIntro} />
     </div>
   )
 }
