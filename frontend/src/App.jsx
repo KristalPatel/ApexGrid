@@ -58,7 +58,7 @@ export default function App() {
     setTimeout(() => {
       localStorage.setItem('apexgrid_user', JSON.stringify(u))
       setUser(u)
-      navigate(u.role === 'DBA' ? '/admin' : '/')
+      navigate('/')
     }, 550)
     setTimeout(() => setShowCar(false), 1400)
   }

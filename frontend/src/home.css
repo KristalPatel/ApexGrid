@@ -141,3 +141,13 @@
 @media (prefers-reduced-motion: reduce) {
   .home-champion__img, .home-champion__label { transition: none !important; }
 }
+
+/* Navbar: admin entry + profile chip */
+.nav .nav-links a.nav-admin { color: var(--papaya); border: 1px solid rgba(255, 128, 0, .55); border-radius: 99px; padding: 5px 16px; font-size: 16px; }
+.nav .nav-links a.nav-admin:hover, .nav .nav-links a.nav-admin.active { color: #0b0b0d; background: var(--papaya); }
+.nav .nav-links a.nav-admin.active::after { display: none; }
+.nav-user { display: flex; align-items: center; gap: 14px; }
+.nav-profile { display: flex; align-items: center; gap: 10px; cursor: default; }
+.nav-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-family: var(--font-head); font-size: 17px; font-weight: 700; }
+.nav-name { color: var(--text); font-size: 14px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 800px) { .nav-name { display: none; } .nav .nav-links a.nav-admin { padding: 4px 10px; font-size: 14px; } }

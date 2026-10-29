@@ -9,6 +9,7 @@ export default function AdminLayout({ user, onLogout }) {
         {ADMIN_MENU.map((m) => (
           <NavLink key={m.to} to={m.to} end={m.end}>{m.label}</NavLink>
         ))}
+        <Link to="/" className="back-link">← Back to site</Link>
         <div className="bottom">
           <p className="notice" style={{ marginBottom: 10 }}>Signed in as {user.username}</p>
           <button className="btn ghost small" onClick={onLogout}>Log out</button>
