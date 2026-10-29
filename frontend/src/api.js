@@ -5,7 +5,7 @@
 
 import * as mock from './data/mockData.js'
 
-const USE_MOCK = true
+const USE_MOCK = false
 const wait = (data) => new Promise((res) => setTimeout(() => res(data), 150))
 
 async function get(url) {
@@ -124,3 +124,70 @@ export const getXml = (table) => {
     .join('\n')
   return wait(`<?xml version="1.0" encoding="UTF-8"?>\n<${table}s>\n${body}\n</${table}s>`)
 }
+
+// ---------- Driver detail page ----------
+// The real driver table stores first_name / last_name and has no team column.
+// Team and racing number come from the driver's latest contract, joined in the backend.
+// Everything below returns the same shape in mock and real mode:
+//   driver: { driver_id, full_name, first_name?, last_name?, driver_code, nationality,
+//             date_of_birth|null, team_id|null, team_name|null, car_number|null }
+//   stats : { wins, podiums, poles, fastest_laps }   (a value is null when it cannot be calculated)
+const shapeDriver = (d) => ({
+  ...d,
+  full_name: d.full_name || [d.first_name, d.last_name].filter(Boolean).join(' '),
+})
+
+const mockSummary = (d) => {
+  const team = mock.teams.find((t) => t.team_name === d.team_name)
+  return shapeDriver({
+    driver_id: d.driver_id,
+    full_name: d.full_name,
+    driver_code: d.driver_code,
+    nationality: d.nationality,
+    date_of_birth: null,
+    team_id: team ? team.team_id : null,
+    team_name: d.team_name || null,
+    car_number: null,
+    wins: d.wins ?? null,
+    points: d.points ?? null,
+  })
+}
+
+export const getDrivers = () =>
+  USE_MOCK
+    ? wait(mock.drivers.map(mockSummary))
+    : get('/api/drivers/summary').then((rows) => rows.map(shapeDriver))
+
+// Resolves to null when the driver does not exist.
+export const getDriverProfile = (id) => {
+  if (!USE_MOCK) {
+    return get(`/api/driver/${encodeURIComponent(id)}`).then((r) =>
+      r ? { driver: shapeDriver(r.driver), stats: r.stats, mock: false } : null
+    )
+  }
+  const d = mock.drivers.find((x) => String(x.driver_id) === String(id))
+  return wait(
+    d
+      ? { driver: mockSummary(d), stats: { wins: d.wins ?? null, podiums: null, poles: null, fastest_laps: null }, mock: true }
+      : null
+  )
+}
+
+// ---------- Teams and races for the public pages ----------
+// Same shape in mock and real mode, so the pages never care which one is active.
+//   team: { team_id, team_name, country, team_chief, wins|null, points|null }
+//   race: { race_id, round, race_name, race_date, circuit_id, circuit_name, country?, winner|null }
+export const getTeams = () =>
+  USE_MOCK
+    ? wait(mock.teams.map((t) => ({ ...t, wins: t.wins ?? null, points: t.points ?? null })))
+    : get('/api/teams/summary')
+
+export const getRaces = () =>
+  USE_MOCK
+    ? wait(
+        mock.races.map((r) => {
+          const c = mock.circuits.find((x) => x.circuit_name === r.circuit_name)
+          return { ...r, circuit_id: c ? c.circuit_id : null, winner: r.winner || null }
+        })
+      )
+    : get('/api/races/summary')

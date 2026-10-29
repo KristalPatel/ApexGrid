@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { getTable } from '../api.js'
+import { getDrivers } from '../api.js'
 import DataTable from '../components/DataTable.jsx'
 
 // Section C: shows the result of your SQL view. For now it reads the driver table.
 // Later point this at /api/view/<name> once the view exists in MySQL.
 export default function Views() {
   const [rows, setRows] = useState([])
-  useEffect(() => { getTable('driver').then(setRows) }, [])
+  useEffect(() => { getDrivers().then(setRows) }, [])
 
   return (
     <div>

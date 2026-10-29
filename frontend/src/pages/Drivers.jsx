@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { getTable } from '../api.js'
+import { getDrivers } from '../api.js'
 import { TEAM_THEMES } from '../config/appConfig.js'
 import { getDriverImage } from '../config/driverImages.js'   // NEW
 
 export default function Drivers() {
   const [rows, setRows] = useState([])
-  useEffect(() => { getTable('driver').then(setRows) }, [])
+  useEffect(() => { getDrivers().then(setRows).catch(() => setRows([])) }, [])
 
   return (
     <div className="page container">
@@ -27,8 +27,10 @@ export default function Drivers() {
                 {img && <img src={img} alt="" className="driver-thumb" />}   {/* NEW: shows only if an image exists */}
                 <span className="pill">{d.driver_code}</span>
                 <h3 style={{ marginTop: 10 }}>{d.full_name}</h3>
-                <p className="meta">{d.team_name} · {d.nationality}</p>
-                <p className="meta" style={{ marginTop: 10 }}>{d.wins} wins · {d.points} pts</p>
+                <p className="meta">{[d.team_name, d.nationality].filter(Boolean).join(' · ')}</p>
+                {d.wins != null && d.points != null && (
+                  <p className="meta" style={{ marginTop: 10 }}>{d.wins} wins · {d.points} pts</p>
+                )}
               </Link>
             </motion.div>
           )

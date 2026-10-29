@@ -14,7 +14,7 @@ function TrackDot({ pathRef, active }) {
   useEffect(() => {
     const path = pathRef.current
     const el = dot.current
-    if (!active || !path || !el) return undefined
+    if (!active || !path || !el || typeof path.getTotalLength !== 'function') return undefined
     const len = path.getTotalLength()
     let raf
     let t0

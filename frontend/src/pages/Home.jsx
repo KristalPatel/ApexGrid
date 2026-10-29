@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { getHome, getTable } from '../api.js'
+import { getHome, getTable, getDrivers, getRaces } from '../api.js'
 import RaceStartIntro from '../components/home/RaceStartIntro.jsx'
 import HeroChampion from '../components/home/HeroChampion.jsx'
 import Constructors from '../components/home/Constructors.jsx'
@@ -26,7 +26,7 @@ export default function Home() {
   // All data comes through the existing API layer. Failures fall back to empty states.
   useEffect(() => {
     let alive = true
-    Promise.allSettled([getHome(), getTable('driver'), getTable('race'), getTable('circuit')]).then(([h, d, r, c]) => {
+    Promise.allSettled([getHome(), getDrivers(), getRaces(), getTable('circuit')]).then(([h, d, r, c]) => {
       if (!alive) return
       if (h.status === 'fulfilled') setHome(h.value)
       setTables({

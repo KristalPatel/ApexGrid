@@ -104,18 +104,19 @@ app.get('/api/filter', route(async (req) => {
 }))
 
 // ---------- Join (Q5) ----------
-// TODO: adjust table and column names to your schema.
+// Driver -> contract -> team. A driver with several contracts appears once per contract.
 app.get('/api/join', route(async (req) => {
   const type = okIn(JOIN_TYPES, req.query.type, 'Join type')
   const [rows] = await pool.query(
-    `SELECT d.first_name AS driver, t.team_name AS team, t.team_chief
-       FROM driver d ${type} team t ON d.team_name = t.team_name`
+    `SELECT CONCAT(d.first_name, ' ', d.last_name) AS driver, t.team_name AS team, t.team_chief
+       FROM driver d
+       ${type} driver_contract c ON c.driver_id = d.driver_id
+       ${type} team t ON t.team_id = c.team_id`
   )
   return rows
 }))
 
 // ---------- Subquery (Q6) and correlated subquery (Q7) ----------
-// TODO: adjust to your schema.
 app.get('/api/subquery', route(async (req) => {
   const option = req.query.option
   if (option === 'winners') {
@@ -125,8 +126,20 @@ app.get('/api/subquery', route(async (req) => {
     return rows
   }
   if (option === 'above_team_avg') {
+    // Correlated: for each driver's season points, compare with the average of their team in that season.
     const [rows] = await pool.query(
-      'SELECT * FROM driver d WHERE d.points > (SELECT AVG(x.points) FROM driver x WHERE x.team_name = d.team_name)'
+      `SELECT d.driver_id, CONCAT(d.first_name, ' ', d.last_name) AS driver, t.team_name AS team,
+              CAST(ds.total_points AS DOUBLE) AS total_points
+         FROM driver_standing ds
+         JOIN driver d ON d.driver_id = ds.driver_id
+         JOIN driver_contract c ON c.driver_id = ds.driver_id AND c.season_id = ds.season_id
+         JOIN team t ON t.team_id = c.team_id
+        WHERE ds.total_points > (
+                SELECT AVG(ds2.total_points)
+                  FROM driver_standing ds2
+                  JOIN driver_contract c2 ON c2.driver_id = ds2.driver_id AND c2.season_id = ds2.season_id
+                 WHERE c2.team_id = c.team_id AND ds2.season_id = ds.season_id)
+        ORDER BY ds.total_points DESC`
     )
     return rows
   }
@@ -134,21 +147,135 @@ app.get('/api/subquery', route(async (req) => {
 }))
 
 // ---------- Home page numbers ----------
-// TODO: replace with real queries on standings and results.
+// Champion = the driver / team with final_position 1 in the most recent season that has standings.
 app.get('/api/home', route(async () => {
-  const [[champion]] = await pool.query('SELECT * FROM driver ORDER BY points DESC LIMIT 1')
-  const [[constructorChampion]] = await pool.query('SELECT * FROM team ORDER BY points DESC LIMIT 1')
+  const [champRows] = await pool.query(
+    `SELECT d.driver_id, CONCAT(d.first_name, ' ', d.last_name) AS full_name, d.driver_code, d.nationality,
+            ds.wins, CAST(ds.total_points AS DOUBLE) AS points, s.year AS season_year,
+            (SELECT t.team_name FROM driver_contract c JOIN team t ON t.team_id = c.team_id
+              WHERE c.driver_id = d.driver_id AND c.season_id = ds.season_id
+              ORDER BY c.start_date DESC, c.contract_id DESC LIMIT 1) AS team_name
+       FROM driver_standing ds
+       JOIN season s ON s.season_id = ds.season_id
+       JOIN driver d ON d.driver_id = ds.driver_id
+      WHERE ds.final_position = 1
+      ORDER BY s.year DESC LIMIT 1`
+  )
+  const [teamRows] = await pool.query(
+    `SELECT t.team_id, t.team_name, t.team_chief, t.nationality AS country,
+            cs.wins, CAST(cs.total_points AS DOUBLE) AS points, s.year AS season_year
+       FROM constructor_standing cs
+       JOIN season s ON s.season_id = cs.season_id
+       JOIN team t ON t.team_id = cs.team_id
+      WHERE cs.final_position = 1
+      ORDER BY s.year DESC LIMIT 1`
+  )
   const [[races]] = await pool.query('SELECT COUNT(*) AS n FROM race')
   const [[drivers]] = await pool.query('SELECT COUNT(*) AS n FROM driver')
   return {
-    champion,
-    constructorChampion,
+    champion: champRows[0] || null,
+    constructorChampion: teamRows[0] || null,
     counters: [
       { label: 'Races', value: races.n },
       { label: 'Drivers', value: drivers.n },
     ],
     records: [],
   }
+}))
+
+// ---------- Driver detail page ----------
+// Current team = the driver's latest contract (newest season year, then newest start_date).
+// DATE_FORMAT keeps date_of_birth as a plain 'YYYY-MM-DD' string (no timezone shift).
+const DRIVER_WITH_TEAM = `
+  SELECT d.driver_id, d.first_name, d.last_name,
+         DATE_FORMAT(d.date_of_birth, '%Y-%m-%d') AS date_of_birth,
+         d.nationality, d.driver_code,
+         t.team_id, t.team_name, c.car_number,
+         ds.wins, CAST(ds.total_points AS DOUBLE) AS points, ds.final_position AS standing_position
+    FROM driver d
+    LEFT JOIN driver_contract c ON c.contract_id = (
+      SELECT c2.contract_id
+        FROM driver_contract c2
+        LEFT JOIN season s ON s.season_id = c2.season_id
+       WHERE c2.driver_id = d.driver_id
+       ORDER BY s.year DESC, c2.start_date DESC, c2.contract_id DESC
+       LIMIT 1)
+    LEFT JOIN team t ON t.team_id = c.team_id
+    LEFT JOIN driver_standing ds ON ds.driver_id = d.driver_id AND ds.season_id = (
+      SELECT x.season_id FROM driver_standing x JOIN season s3 ON s3.season_id = x.season_id
+       ORDER BY s3.year DESC LIMIT 1)`
+
+// All drivers with their current team and number (used by the "More drivers" row).
+app.get('/api/drivers/summary', route(async () => {
+  const [rows] = await pool.query(`${DRIVER_WITH_TEAM} ORDER BY ds.final_position IS NULL, ds.final_position, d.last_name, d.first_name`)
+  return rows
+}))
+
+// One driver plus career stats. Returns null when the driver does not exist.
+// A stat is null (not 0) when the data needed to calculate it has not been loaded yet,
+// so an empty database never shows fake zeros.
+app.get('/api/driver/:id', route(async (req) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id < 1) throw new Error('Invalid driver id')
+
+  const [drivers] = await pool.query(`${DRIVER_WITH_TEAM} WHERE d.driver_id = ?`, [id])
+  if (!drivers.length) return null
+
+  // Separate scalar subqueries, so joins can never double-count a race.
+  const [[n]] = await pool.query(
+    `SELECT
+       (SELECT COUNT(DISTINCT race_id) FROM race_result WHERE driver_id = ?) AS result_races,
+       (SELECT COUNT(DISTINCT race_id) FROM race_result WHERE driver_id = ? AND finishing_position = 1) AS wins,
+       (SELECT COUNT(DISTINCT race_id) FROM race_result WHERE driver_id = ? AND finishing_position BETWEEN 1 AND 3) AS podiums,
+       (SELECT COUNT(*) FROM (SELECT race_id FROM race_result GROUP BY race_id
+                              HAVING COALESCE(SUM(finishing_position BETWEEN 1 AND 3), 0) < 3) x) AS podium_incomplete_races,
+       (SELECT COUNT(DISTINCT race_id) FROM qualifying WHERE driver_id = ?) AS qualifying_races,
+       (SELECT COUNT(DISTINCT race_id) FROM qualifying WHERE driver_id = ? AND position = 1) AS poles,
+       (SELECT COUNT(*) FROM fastest_lap) AS fastest_lap_rows,
+       (SELECT COUNT(DISTINCT race_id) FROM fastest_lap WHERE driver_id = ?) AS fastest_laps`,
+    [id, id, id, id, id, id]
+  )
+  const stats = {
+    wins: n.result_races > 0 ? n.wins : null,
+    // Podiums need the top three of every race with results. Until then the number would be wrong.
+    podiums: n.result_races > 0 && n.podium_incomplete_races === 0 ? n.podiums : null,
+    poles: n.qualifying_races > 0 ? n.poles : null,
+    fastest_laps: n.result_races > 0 && n.fastest_lap_rows > 0 ? n.fastest_laps : null,
+  }
+  return { driver: drivers[0], stats }
+}))
+
+// ---------- Teams and races for the public pages ----------
+// Team list with the latest constructor standing.
+app.get('/api/teams/summary', route(async () => {
+  const [rows] = await pool.query(
+    `SELECT t.team_id, t.team_name, t.nationality AS country, t.team_chief,
+            cs.wins, CAST(cs.total_points AS DOUBLE) AS points, cs.final_position AS standing_position
+       FROM team t
+       LEFT JOIN constructor_standing cs ON cs.team_id = t.team_id AND cs.season_id = (
+         SELECT x.season_id FROM constructor_standing x JOIN season s ON s.season_id = x.season_id
+          ORDER BY s.year DESC LIMIT 1)
+      ORDER BY cs.final_position IS NULL, cs.final_position, t.team_name`
+  )
+  return rows
+}))
+
+// Races with circuit and winner. The winner is a subquery so a race never appears twice.
+app.get('/api/races/summary', route(async () => {
+  const [rows] = await pool.query(
+    `SELECT r.race_id, r.round_number AS round, r.race_name,
+            DATE_FORMAT(r.race_date, '%Y-%m-%d') AS race_date, s.year AS season_year,
+            c.circuit_id, c.circuit_name, c.country,
+            (SELECT CONCAT(d.first_name, ' ', d.last_name)
+               FROM race_result rr JOIN driver d ON d.driver_id = rr.driver_id
+              WHERE rr.race_id = r.race_id AND rr.finishing_position = 1
+              ORDER BY rr.result_id LIMIT 1) AS winner
+       FROM race r
+       JOIN circuit c ON c.circuit_id = r.circuit_id
+       JOIN season s ON s.season_id = r.season_id
+      ORDER BY s.year DESC, r.round_number`
+  )
+  return rows
 }))
 
 // ---------- XML (Section F) ----------

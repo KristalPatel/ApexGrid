@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { getTable } from '../api.js'
+import { getTable, getRaces } from '../api.js'
 import DataTable from '../components/DataTable.jsx'
 
 export function Circuits() {
@@ -18,7 +18,9 @@ export function Circuits() {
             <Link to={`/circuits/${c.circuit_id}`} className="card" style={{ display: 'block' }}>
               <h3>{c.circuit_name}</h3>
               <p className="meta">{c.country}</p>
-              <p className="meta" style={{ marginTop: 10 }}>{c.length_km} km · {c.laps} laps</p>
+              <p className="meta" style={{ marginTop: 10 }}>
+                {[c.length_km != null && `${c.length_km} km`, c.laps != null && `${c.laps} laps`].filter(Boolean).join(' · ')}
+              </p>
             </Link>
           </motion.div>
         ))}
@@ -37,7 +39,7 @@ export function CircuitDetail() {
     getTable('circuit').then((rows) => {
       const c = rows.find((r) => String(r.circuit_id) === id)
       setCircuit(c)
-      getTable('race').then((rs) => setRaces(rs.filter((r) => c && r.circuit_name === c.circuit_name)))
+      getRaces().then((rs) => setRaces(rs.filter((r) => c && String(r.circuit_id) === String(c.circuit_id))))
     })
   }, [id])
 
@@ -49,8 +51,8 @@ export function CircuitDetail() {
       <h1 className="page-title">{circuit.circuit_name}</h1>
       <p className="page-sub">{circuit.country}</p>
       <div className="stat-row">
-        <div><span>Length</span><b>{circuit.length_km} km</b></div>
-        <div><span>Laps</span><b>{circuit.laps}</b></div>
+        {circuit.length_km != null && <div><span>Length</span><b>{circuit.length_km} km</b></div>}
+        {circuit.laps != null && <div><span>Laps</span><b>{circuit.laps}</b></div>}
       </div>
       <h2 style={{ fontSize: 30, margin: '10px 0 14px' }}>Who won here</h2>
       <DataTable rows={races} columns={['round', 'race_name', 'race_date', 'winner']} />

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { getTable } from '../api.js'
+import { getTeams } from '../api.js'
 import { TEAM_THEMES } from '../config/appConfig.js'
 
 export default function Teams() {
   const [rows, setRows] = useState([])
-  useEffect(() => { getTable('team').then(setRows) }, [])
+  useEffect(() => { getTeams().then(setRows).catch(() => setRows([])) }, [])
 
   return (
     <div className="page container">
@@ -22,8 +22,10 @@ export default function Teams() {
             transition={{ delay: i * 0.07 }}
           >
             <h3>{t.team_name}</h3>
-            <p className="meta">{t.country} · Chief: {t.team_chief}</p>
-            <p className="meta" style={{ marginTop: 10 }}>{t.wins} wins · {t.points} pts</p>
+            <p className="meta">{[t.country, t.team_chief && `Chief: ${t.team_chief}`].filter(Boolean).join(' · ')}</p>
+            {t.wins != null && t.points != null && (
+              <p className="meta" style={{ marginTop: 10 }}>{t.wins} wins · {t.points} pts</p>
+            )}
           </motion.div>
         ))}
       </div>

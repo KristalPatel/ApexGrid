@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { getTable } from '../api.js'
+import { getRaces } from '../api.js'
 import DataTable from '../components/DataTable.jsx'
 
 export default function Races() {
   const [rows, setRows] = useState([])
-  useEffect(() => { getTable('race').then(setRows) }, [])
+  useEffect(() => { getRaces().then(setRows).catch(() => setRows([])) }, [])
 
   return (
     <div className="page container">
