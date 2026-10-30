@@ -4,6 +4,7 @@ import { getDriverProfile, getDrivers } from '../api.js'
 import DriverHero from '../components/driver/DriverHero.jsx'
 import StatsStrip from '../components/driver/StatsStrip.jsx'
 import MoreDrivers from '../components/driver/MoreDrivers.jsx'
+import { hexToRgb, teamColor } from '../components/driver/driverUtils.js'
 import '../driver.css'
 
 // Route: /drivers/:id  (id is the driver_id, never the racing number)
@@ -32,8 +33,12 @@ export default function DriverDetail() {
     return () => { alive = false }
   }, [attempt])
 
+  // The whole page takes the colour of the driver's current team.
+  const color = teamColor(profile.data?.driver?.team_name)
+  const theme = { '--dd-orange': color, '--dd-rgb': hexToRgb(color) }
+
   return (
-    <main className="dd">
+    <main className="dd" style={theme}>
       {profile.status === 'loading' && (
         <div className="dd-state" role="status" aria-live="polite">
           <div className="dd-skeleton" aria-hidden="true" />

@@ -1,4 +1,14 @@
+import { TEAM_THEMES } from '../../config/appConfig.js'
+
 // Small helpers for the driver detail page. No data lives here, only formatting.
+
+// Team colour (hex) with a neutral racing-orange fallback for unknown teams.
+export const DEFAULT_COLOR = '#ff7a1a'
+export const teamColor = (teamName) => TEAM_THEMES[teamName] || DEFAULT_COLOR
+export function hexToRgb(hex) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '')
+  return m ? `${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}` : '255, 122, 26'
+}
 
 // Nationality (as stored in the driver table) -> ISO country code, used only to look up an
 // optional local flag file at /images/flags/<code>.svg. Unknown values simply show no flag.

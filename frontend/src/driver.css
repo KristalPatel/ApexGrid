@@ -4,6 +4,7 @@
   --dd-panel: #09090b;
   --dd-line: rgba(255, 255, 255, 0.1);
   --dd-orange: #ff7a1a;
+  --dd-rgb: 255, 122, 26; /* DriverDetail overrides both with the team colour */
   --dd-muted: #9a9aa6;
   background: var(--dd-bg);
   min-height: 100vh;
@@ -25,14 +26,14 @@
 /* Hero */
 .dd-hero { position: relative; min-height: clamp(460px, 64vh, 620px); display: flex; align-items: center; overflow: hidden; border-bottom: 1px solid var(--dd-line); }
 .dd-hero__light { position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse 55% 70% at 78% 42%, rgba(255, 122, 26, .22), transparent 70%), radial-gradient(ellipse 40% 50% at 8% 100%, rgba(255, 122, 26, .08), transparent 70%); }
+  background: radial-gradient(ellipse 55% 70% at 78% 42%, rgba(var(--dd-rgb), .22), transparent 70%), radial-gradient(ellipse 40% 50% at 8% 100%, rgba(var(--dd-rgb), .08), transparent 70%); }
 .dd-hero__photo { position: absolute; top: 0; right: 0; bottom: 0; width: min(64%, 920px); z-index: 1;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 42%), linear-gradient(to bottom, #000 72%, transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, #000 42%), linear-gradient(to bottom, #000 72%, transparent 100%);
   -webkit-mask-composite: source-in; mask-composite: intersect; }
 .dd-hero__photo img { width: 100%; height: 100%; object-fit: cover; object-position: 55% 22%; display: block; }
 .dd-hero__placeholder { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-head); font-weight: 800; font-size: clamp(120px, 20vw, 260px); color: rgba(255, 255, 255, .05); }
-.dd-hero__bignum { position: absolute; z-index: 2; right: 7%; top: 8%; font-family: var(--font-head); font-weight: 800; font-size: clamp(200px, 32vw, 460px); line-height: .85; color: transparent; -webkit-text-stroke: 2px rgba(255, 122, 26, .5); pointer-events: none; user-select: none; }
+.dd-hero__bignum { position: absolute; z-index: 2; right: 7%; top: 8%; font-family: var(--font-head); font-weight: 800; font-size: clamp(200px, 32vw, 460px); line-height: .85; color: transparent; -webkit-text-stroke: 2px rgba(var(--dd-rgb), .5); pointer-events: none; user-select: none; }
 .dd-hero__signature { position: absolute; z-index: 3; right: 6%; bottom: 12%; width: clamp(120px, 16vw, 240px); pointer-events: none; }
 .dd-hero__signature img { width: 100%; height: auto; display: block; }
 .dd-hero__inner { position: relative; z-index: 4; padding-top: 28px; padding-bottom: 36px; }
@@ -67,8 +68,8 @@
 .dd-rail { position: relative; flex: 1; min-width: 0; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x proximity; padding: 4px; scrollbar-width: none; }
 .dd-rail::-webkit-scrollbar { display: none; }
 .dd-card { flex: 0 0 auto; width: 232px; display: flex; align-items: center; gap: 14px; padding: 10px; border: 1px solid var(--dd-line); border-radius: 8px; background: var(--dd-panel); scroll-snap-align: start; transition: border-color .25s, background .25s; }
-a.dd-card:hover, a.dd-card:focus-visible { border-color: rgba(255, 122, 26, .6); background: #0e0e11; outline: none; }
-.dd-card.is-current { border-color: var(--dd-orange); cursor: default; }
+a.dd-card:hover, a.dd-card:focus-visible { border-color: var(--card-team, var(--dd-orange)); background: #0e0e11; outline: none; }
+.dd-card.is-current { border-color: var(--card-team, var(--dd-orange)); cursor: default; }
 .dd-card__thumb { flex: none; width: 56px; height: 64px; border-radius: 5px; overflow: hidden; background: #15151a; display: grid; place-items: center; font-family: var(--font-head); font-size: 20px; color: var(--dd-muted); }
 .dd-card__thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
 .dd-card__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

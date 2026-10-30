@@ -21,8 +21,8 @@ export default function Drivers() {
             <motion.div key={d.driver_id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Link
                 to={`/drivers/${d.driver_id}`}
-                className="card"
-                style={{ display: 'block', borderTop: `3px solid ${TEAM_THEMES[d.team_name] || 'var(--accent)'}` }}
+                className="card team-card"
+                style={{ display: 'block', '--team': TEAM_THEMES[d.team_name] || 'var(--accent)' }}
               >
                 {img && <img src={img} alt="" className="driver-thumb" />}   {/* NEW: shows only if an image exists */}
                 <span className="pill">{d.driver_code}</span>

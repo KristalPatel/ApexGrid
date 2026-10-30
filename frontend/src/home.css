@@ -151,3 +151,10 @@
 .nav-avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; font-family: var(--font-head); font-size: 17px; font-weight: 700; }
 .nav-name { color: var(--text); font-size: 14px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 800px) { .nav-name { display: none; } .nav .nav-links a.nav-admin { padding: 4px 10px; font-size: 14px; } }
+
+/* Team-coloured cards (Drivers and Teams lists). --team is set per card. */
+.card.team-card { position: relative; overflow: hidden; border-top: 3px solid var(--team); }
+.card.team-card::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, color-mix(in srgb, var(--team) 16%, transparent), transparent 55%); }
+.card.team-card > * { position: relative; }
+.card.team-card:hover { border-color: var(--team); box-shadow: 0 10px 34px color-mix(in srgb, var(--team) 24%, transparent); }
+.card.team-card .pill { color: var(--team); border-color: var(--team); }
