@@ -8,9 +8,22 @@ import * as mock from './data/mockData.js'
 const USE_MOCK = false
 const wait = (data) => new Promise((res) => setTimeout(() => res(data), 150))
 
+// When the backend says no (a trigger, a rule, a wrong password...), it sends { error: '...' }.
+// We pass that real message on, so the pages can show it instead of a vague "Request failed".
+async function fail(r) {
+  let msg = 'Request failed'
+  try {
+    const body = await r.json()
+    if (body && body.error) msg = body.error
+  } catch {
+    // the reply was not JSON, keep the default message
+  }
+  throw new Error(msg)
+}
+
 async function get(url) {
   const r = await fetch(url)
-  if (!r.ok) throw new Error('Request failed')
+  if (!r.ok) await fail(r)
   return r.json()
 }
 async function send(url, method, body) {
@@ -19,7 +32,7 @@ async function send(url, method, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  if (!r.ok) throw new Error('Request failed')
+  if (!r.ok) await fail(r)
   return r.json()
 }
 

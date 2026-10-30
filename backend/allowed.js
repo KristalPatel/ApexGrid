@@ -1,7 +1,8 @@
+
 // The "allowed list". Table names, column names, operators and functions can NOT be sent
 // to MySQL as ? values, so we only accept names that appear here. This stops SQL injection.
 //
-// All 22 ApexGrid tables, with the real column names from the database.
+// All 22 ApexGrid tables + 2 lookup tables (race_status, penalty_type), with the real column names.
 // Never list password_hash.
 //
 // "id" is the column used by the Update and Delete routes.
@@ -41,7 +42,7 @@ export const TABLES = {
   },
   race_result: {
     id: 'result_id',
-    columns: ['result_id', 'race_id', 'driver_id', 'team_id', 'grid_position', 'finishing_position', 'points', 'status'],
+    columns: ['result_id', 'race_id', 'driver_id', 'team_id', 'grid_position', 'finishing_position', 'points', 'status_id'],
   },
   qualifying: {
     id: 'qualifying_id',
@@ -65,7 +66,7 @@ export const TABLES = {
   },
   penalty: {
     id: 'penalty_id',
-    columns: ['penalty_id', 'race_id', 'driver_id', 'penalty_type', 'time_penalty_seconds', 'reason'],
+    columns: ['penalty_id', 'race_id', 'driver_id', 'penalty_type_id', 'time_penalty_seconds', 'reason'],
   },
   driver_standing: {
     id: 'season_id', // composite key (season_id + driver_id)
@@ -82,6 +83,14 @@ export const TABLES = {
   sector_time: {
     id: 'race_id', // composite key (race_id + driver_id + lap_number + sector_number)
     columns: ['race_id', 'driver_id', 'lap_number', 'sector_number', 'sector_time_seconds'],
+  },
+  race_status: {
+    id: 'status_id',
+    columns: ['status_id', 'status_name'],
+  },
+  penalty_type: {
+    id: 'penalty_type_id',
+    columns: ['penalty_type_id', 'type_name'],
   },
   sponsor: {
     id: 'sponsor_id',
