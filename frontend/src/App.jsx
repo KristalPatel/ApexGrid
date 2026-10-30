@@ -10,6 +10,7 @@ import Home from './pages/Home.jsx'
 import Drivers from './pages/Drivers.jsx'
 import DriverDetail from './pages/DriverDetail.jsx'
 import Teams from './pages/Teams.jsx'
+import TeamDetail from './pages/TeamDetail.jsx'
 import Races from './pages/Races.jsx'
 import { Circuits, CircuitDetail } from './pages/Circuits.jsx'
 import AdminLayout from './admin/AdminLayout.jsx'
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers/:id" element={<DriverDetail />} />
         <Route path="/teams" element={<Teams />} />
+        <Route path="/teams/:id" element={<TeamDetail />} />
         <Route path="/races" element={<Races />} />
         <Route path="/circuits" element={<Circuits />} />
         <Route path="/circuits/:id" element={<CircuitDetail />} />

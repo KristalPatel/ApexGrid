@@ -41,6 +41,11 @@ export const TEAM_THEMES = {
   Ferrari: '#e8002d',
   Mercedes: '#00d2be',
   'Aston Martin': '#229971',
+  Williams: '#41a6ff',
+  'Racing Bulls': '#6692ff',
+  Haas: '#d0d3d8',
+  'Kick Sauber': '#52e252',
+  Alpine: '#2a9df4',
 }
 
 // Admin sidebar. Each entry is one page of the assignment checklist.

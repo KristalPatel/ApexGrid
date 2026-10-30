@@ -1,0 +1,76 @@
+/* Circuits list + circuit page. Scoped to .cl-* / .cd-* / .trk* so other pages are unaffected. */
+.cl, .cd { --cx: #ff6a1a; --cx-rgb: 255, 106, 26; background: #050506; min-height: 100vh; padding-top: 70px; overflow-x: clip; }
+.cl-wrap { max-width: 1280px; margin: 0 auto; padding: 60px 32px 90px; }
+.cl-note { color: var(--muted); font-size: 14px; margin-top: 18px; }
+
+/* List */
+.cl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; margin-top: 36px; }
+.cl-card { display: block; padding: 18px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; background: #09090b; transition: border-color .25s, transform .25s, box-shadow .25s; }
+.cl-card:hover, .cl-card:focus-visible { border-color: var(--cx); transform: translateY(-4px); box-shadow: 0 12px 36px rgba(var(--cx-rgb), .16); outline: none; }
+.cl-card__map { aspect-ratio: 800 / 420; margin-bottom: 14px; border-radius: 6px; background: radial-gradient(ellipse at 50% 50%, rgba(var(--cx-rgb), .10), transparent 70%); }
+.cl-card h3 { font-size: 24px; line-height: 1.1; }
+.cl-card p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+.cl-card__km { display: inline-block; margin-top: 10px; font-family: var(--font-head); letter-spacing: .12em; font-size: 15px; color: var(--cx); }
+
+/* Track drawing */
+.trk { display: block; width: 100%; height: auto; overflow: visible; }
+.trk__mini-bg { fill: none; stroke: #1e1e24; stroke-width: 20; stroke-linejoin: round; }
+.trk__mini { fill: none; stroke: rgba(var(--cx-rgb), .75); stroke-width: 3.5; stroke-linejoin: round; transition: stroke .25s; }
+.cl-card:hover .trk__mini { stroke: var(--cx); }
+.trk__ext { fill: none; stroke: #2a0f06; stroke-width: 32; stroke-linejoin: round; }
+.trk__ext2 { fill: none; stroke: #4a1d0c; stroke-width: 32; stroke-linejoin: round; }
+.trk__rim { fill: none; stroke: rgba(var(--cx-rgb), .55); stroke-width: 36; stroke-linejoin: round; }
+.trk__body { fill: none; stroke: #131317; stroke-width: 31; stroke-linejoin: round; }
+.trk__glow { fill: none; stroke: var(--cx); stroke-width: 9; stroke-linejoin: round; opacity: .8; }
+.trk__line { fill: none; stroke: #ffb27a; stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.trk__start rect { fill: #fff; }
+.trk__dot { fill: #fff; }
+.trk__halo { fill: rgba(var(--cx-rgb), .4); }
+.trk-wrap { perspective: 1500px; }
+.trk-wrap .trk { transform: rotateX(34deg) rotateZ(-3deg); transform-origin: 50% 55%; }
+
+/* Circuit page */
+.cd-pad { padding: 60px 32px; }
+.cd-hero { position: relative; max-width: 1400px; margin: 0 auto; padding: 36px 40px 30px 110px; display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 20px; align-items: center; min-height: 600px; }
+.cd-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 55% 60% at 66% 55%, rgba(var(--cx-rgb), .16), transparent 70%); }
+.cd-side { position: absolute; left: 28px; top: 24px; bottom: 24px; writing-mode: vertical-rl; transform: rotate(180deg); font-family: var(--font-head); font-weight: 800; font-size: clamp(54px, 7vw, 96px); letter-spacing: .06em; line-height: 1; text-transform: uppercase; color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.22); white-space: nowrap; overflow: hidden; pointer-events: none; }
+.cd-head { position: relative; z-index: 2; }
+.cd-crumbs { display: flex; flex-wrap: wrap; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 26px; }
+.cd-crumbs a:hover { color: #fff; }
+.cd-crumbs [aria-current] { color: #fff; }
+.cd-eyebrow { color: var(--cx); font-family: var(--font-head); letter-spacing: .24em; font-size: 14px; text-transform: uppercase; }
+.cd-title { font-size: clamp(40px, 5vw, 76px); font-weight: 800; line-height: .95; margin: 10px 0 26px; }
+.cd-stats { display: flex; flex-wrap: wrap; gap: 26px 36px; }
+.cd-stats dt { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.cd-stats dd { font-family: var(--font-head); font-size: 44px; font-weight: 800; line-height: 1.05; color: var(--cx); }
+.cd-stats dd small { font-size: 18px; letter-spacing: .1em; }
+.cd-stats .cd-stats__name { font-size: 24px; color: #fff; padding-top: 12px; }
+.cd-map { position: relative; z-index: 1; min-width: 0; }
+.cd-caption { text-align: center; color: var(--muted); font-size: 12px; margin-top: 6px; }
+.cd-pager { position: absolute; right: 40px; bottom: 26px; display: flex; gap: 10px; z-index: 3; }
+.cd-pager a { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); background: #09090b; display: grid; place-items: center; font-size: 22px; transition: border-color .25s; }
+.cd-pager a:hover, .cd-pager a:focus-visible { border-color: var(--cx); outline: none; }
+.cd-lower { max-width: 1280px; margin: 0 auto; padding: 20px 32px 90px; }
+.cd-lower h2 { font-size: 22px; letter-spacing: .12em; margin-bottom: 14px; }
+.cd-races { list-style: none; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; background: #09090b; }
+.cd-races li { display: grid; grid-template-columns: 120px 1fr 120px minmax(120px, 200px); gap: 16px; padding: 14px 18px; align-items: center; font-size: 14px; }
+.cd-races li + li { border-top: 1px solid rgba(255,255,255,.07); }
+.cd-races__round { color: var(--cx); font-family: var(--font-head); letter-spacing: .1em; }
+.cd-races__name { font-weight: 600; }
+.cd-races__date, .cd-races__winner { color: var(--muted); }
+.cd-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 26px; }
+.cd-actions .btn { display: inline-block; }
+.cd-actions .btn.ghost { clip-path: none; }
+.cd-msg { max-width: 1280px; margin: 0 auto; padding: 80px 32px; min-height: 70vh; }
+
+@media (max-width: 960px) {
+  .cd-hero { grid-template-columns: 1fr; padding: 28px 20px 70px 64px; min-height: 0; }
+  .cd-side { left: 12px; font-size: 48px; }
+  .cd-pager { right: 20px; }
+  .trk-wrap .trk { transform: rotateX(24deg); }
+  .cd-races li { grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+}
+@media (max-width: 520px) {
+  .cl-wrap, .cd-lower { padding-left: 20px; padding-right: 20px; }
+  .cd-hero { padding-left: 52px; }
+}

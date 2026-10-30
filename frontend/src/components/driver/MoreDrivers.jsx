@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useReducedMotion } from 'framer-motion'
 import { getDriverImage } from '../../config/driverImages.js'
-import { TEAM_THEMES } from '../../config/appConfig.js'
-import { hasNumber, initials } from './driverUtils.js'
+import { hasNumber, initials, teamColor } from './driverUtils.js'
 
 function Card({ d, current }) {
   const img = getDriverImage(d.driver_code)
+  const color = teamColor(d.team_name)
   const body = (
     <>
       <span className="dd-card__thumb">
@@ -17,7 +17,7 @@ function Card({ d, current }) {
         {hasNumber(d.car_number) && <span className="dd-card__num">#{d.car_number}</span>}
         {d.team_name && (
           <span className="dd-card__team">
-            <i style={{ background: TEAM_THEMES[d.team_name] || 'var(--dd-orange)' }} />
+            <i style={{ background: color }} />
             {d.team_name}
           </span>
         )}
@@ -26,8 +26,8 @@ function Card({ d, current }) {
   )
   // The current driver is not a link, so it can never navigate to itself.
   return current
-    ? <div className="dd-card is-current" aria-current="page">{body}</div>
-    : <Link className="dd-card" to={`/drivers/${d.driver_id}`}>{body}</Link>
+    ? <div className="dd-card is-current" style={{ '--card-team': color }} aria-current="page">{body}</div>
+    : <Link className="dd-card" style={{ '--card-team': color }} to={`/drivers/${d.driver_id}`}>{body}</Link>
 }
 
 export default function MoreDrivers({ drivers, status, currentId }) {

@@ -48,8 +48,7 @@ export default function Constructors({ team, season }) {
             </div>
           )}
           <motion.div className="home-actions" {...rise(0.65)}>
-            {/* No team detail route exists, so this goes to the teams directory. */}
-            <Link to="/teams" className="btn btn--papaya">Know more</Link>
+            <Link to={team?.team_id != null ? `/teams/${team.team_id}` : '/teams'} className="btn btn--papaya">Know more</Link>
             <Link to="/teams" className="btn ghost">See all teams</Link>
           </motion.div>
         </div>
