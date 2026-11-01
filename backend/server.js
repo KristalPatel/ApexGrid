@@ -293,5 +293,179 @@ app.get('/api/xml/:name', async (req, res) => {
   }
 })
 
+// ---------------------------------------------------------------
+// PASTE THIS INTO backend/server.js
+// Place it just ABOVE the line:  const PORT = process.env.PORT || 5000
+// No new imports are needed (it uses `route` and `pool` already in the file).
+// ---------------------------------------------------------------
+
+// =============== SECTION C: VIEWS ===============
+// Only views listed here can be read, so the name in the URL is never put into SQL.
+const VIEWS = { v_british_drivers: 'SELECT * FROM v_british_drivers' }
+
+// Must stay ABOVE /api/view/:name, or "lookups" would be read as a view name.
+app.get('/api/view/lookups', route(async () => {
+  const [teams] = await pool.query('SELECT team_id, team_name FROM team ORDER BY team_name')
+  const [seasons] = await pool.query('SELECT season_id, year FROM season ORDER BY year DESC')
+  return { teams, seasons }
+}))
+
+app.get('/api/view/:name', route(async (req) => {
+  const sql = VIEWS[req.params.name]
+  if (!sql) throw new Error('View not allowed')
+  const [rows] = await pool.query(sql)
+  return rows
+}))
+
+// Calls the saved procedure. If a trigger blocks the insert (future birth date),
+// MySQL's SIGNAL message reaches the browser as { error: '...' } through route().
+app.post('/api/view/add-driver', route(async (req) => {
+  const { first, last, dob, nationality, code, team, season, number } = req.body
+  const [result] = await pool.query('CALL sp_add_driver_and_show(?, ?, ?, ?, ?, ?, ?, ?)', [
+    first, last, dob || null, nationality || null, code,
+    Number(team), Number(season), number ? Number(number) : null,
+  ])
+  return result[0] // the procedure's last SELECT: the rows of the view
+}))
+
+// Cleans up drivers created while demonstrating. Refuses real drivers that have results or standings.
+app.delete('/api/view/driver/:id', route(async (req) => {
+  const id = Number(req.params.id)
+  if (!Number.isInteger(id) || id < 1) throw new Error('Invalid driver id')
+  const [[used]] = await pool.query(
+    `SELECT (SELECT COUNT(*) FROM race_result WHERE driver_id = ?)
+          + (SELECT COUNT(*) FROM driver_standing WHERE driver_id = ?) AS n`,
+    [id, id]
+  )
+  if (used.n > 0) throw new Error('This driver has results or standings, so it is not a test driver')
+  await pool.query('DELETE FROM driver_contract WHERE driver_id = ?', [id])
+  await pool.query('DELETE FROM driver WHERE driver_id = ?', [id])
+  return { ok: true }
+}))
+
+app.get('/api/audit/tail', route(async () => {
+  const [rows] = await pool.query(
+    `SELECT log_id, table_name, operation_type, record_id,
+            DATE_FORMAT(changed_at, '%Y-%m-%d %H:%i:%s') AS changed_at, details
+       FROM application_audit_log ORDER BY log_id DESC LIMIT 8`
+  )
+  return rows
+}))
+
+// =============== SECTION B: INDEX LAB ===============
+// Everything runnable is listed here. The browser sends only a name or an id.
+const INDEXES = {
+  idx_driver_nationality:     { table: 'driver',          cols: 'nationality',                     helps: 'Q4' },
+  idx_result_points:          { table: 'race_result',     cols: 'points',                          helps: 'Q3' },
+  idx_result_pos_driver:      { table: 'race_result',     cols: 'finishing_position, driver_id',   helps: 'Q6' },
+  idx_contract_driver_season: { table: 'driver_contract', cols: 'driver_id, season_id, team_id',   helps: 'Q5, Q7' },
+}
+
+const BENCH = {
+  Q1: { label: 'Display all drivers', sql: 'SELECT * FROM driver' },
+  Q3: { label: 'Aggregate: MAX points', sql: 'SELECT MAX(points) FROM race_result' },
+  Q4: { label: 'Condition: British drivers', sql: "SELECT * FROM driver WHERE nationality = 'British'" },
+  Q5: {
+    label: 'Join: driver, contract, team',
+    sql: `SELECT CONCAT(d.first_name, ' ', d.last_name) AS driver, t.team_name
+            FROM driver d
+            JOIN driver_contract c ON c.driver_id = d.driver_id
+            JOIN team t ON t.team_id = c.team_id`,
+  },
+  Q6: {
+    label: 'Subquery: drivers with a win',
+    sql: 'SELECT * FROM driver WHERE driver_id IN (SELECT driver_id FROM race_result WHERE finishing_position = 1)',
+  },
+  Q7: {
+    label: 'Correlated: above team average',
+    sql: `SELECT d.driver_id, ds.total_points
+            FROM driver_standing ds
+            JOIN driver d ON d.driver_id = ds.driver_id
+            JOIN driver_contract c ON c.driver_id = ds.driver_id AND c.season_id = ds.season_id
+           WHERE ds.total_points > (
+                 SELECT AVG(ds2.total_points)
+                   FROM driver_standing ds2
+                   JOIN driver_contract c2 ON c2.driver_id = ds2.driver_id AND c2.season_id = ds2.season_id
+                  WHERE c2.team_id = c.team_id AND ds2.season_id = ds.season_id)`,
+  },
+}
+
+const oneLine = (s) => s.replace(/\s+/g, ' ').trim()
+
+app.get('/api/index/state', route(async () => {
+  const tables = [...new Set(Object.values(INDEXES).map((i) => i.table))]
+  const indexes = []
+  for (const t of tables) {
+    const [rows] = await pool.query(`SHOW INDEX FROM ${t}`)
+    rows.forEach((r) =>
+      indexes.push({ table: r.Table, name: r.Key_name, column: r.Column_name, seq: r.Seq_in_index, unique: r.Non_unique === 0 })
+    )
+  }
+  const catalog = Object.entries(INDEXES).map(([name, i]) => ({
+    name, ...i, exists: indexes.some((x) => x.name === name),
+  }))
+  const queries = Object.entries(BENCH).map(([id, q]) => ({ id, label: q.label, sql: oneLine(q.sql) }))
+  return { catalog, indexes, queries }
+}))
+
+app.post('/api/index/create', route(async (req) => {
+  const name = req.body.name
+  const i = INDEXES[name]
+  if (!i) throw new Error('Index not allowed')
+  await pool.query(`CREATE INDEX ${name} ON ${i.table} (${i.cols})`)
+  return { ok: true }
+}))
+
+app.post('/api/index/drop', route(async (req) => {
+  const name = req.body.name
+  const i = INDEXES[name]
+  if (!i) throw new Error('Index not allowed')
+  try {
+    await pool.query(`DROP INDEX ${name} ON ${i.table}`)
+  } catch (e) {
+    // MySQL may have used our composite index in place of the foreign key's own index.
+    // Error 1553 = the index is still needed by a foreign key. Give the key its own index, then retry.
+    if (e.errno === 1553 && i.table === 'driver_contract') {
+      await pool.query('CREATE INDEX idx_contract_driver_fk ON driver_contract (driver_id)')
+      await pool.query(`DROP INDEX ${name} ON ${i.table}`)
+    } else {
+      throw e
+    }
+  }
+  return { ok: true }
+}))
+
+const median = (list) => {
+  const s = [...list].sort((a, b) => a - b)
+  return s[Math.floor(s.length / 2)]
+}
+
+// Runs one query 5 times. server_ms comes from EXPLAIN ANALYZE (time inside MySQL),
+// wall_ms is the full round trip including the network to the cloud database.
+app.post('/api/index/bench', route(async (req) => {
+  const id = req.body.id
+  const q = BENCH[id]
+  if (!q) throw new Error('Query not allowed')
+  const server = []
+  const wall = []
+  for (let n = 0; n < 5; n++) {
+    const t0 = process.hrtime.bigint()
+    await pool.query(q.sql)
+    wall.push(Number(process.hrtime.bigint() - t0) / 1e6)
+
+    const [r] = await pool.query(`EXPLAIN ANALYZE ${q.sql}`)
+    const text = String(Object.values(r[0])[0])
+    const m = text.match(/actual time=[\d.]+\.\.([\d.]+)/) // first match = top node = whole query
+    if (m) server.push(parseFloat(m[1]))
+  }
+  const [plan] = await pool.query(`EXPLAIN ${q.sql}`)
+  return {
+    id,
+    server_ms: server.length ? median(server) : null,
+    wall_ms: median(wall),
+    plan: plan.map((p) => ({ table: p.table, type: p.type, key: p.key, rows: p.rows, extra: p.Extra })),
+  }
+}))
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`ApexGrid API running on http://localhost:${PORT}`))

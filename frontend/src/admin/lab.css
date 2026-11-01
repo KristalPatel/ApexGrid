@@ -1,0 +1,110 @@
+/* Shared by admin/Views.jsx and admin/IndexLab.jsx
+   Self-contained: it does not depend on your theme variables.
+   If you want it to follow theme.css, replace the colours in :root below. */
+
+.lab {
+  --lab-bg: #14161b;
+  --lab-bg-2: #1b1e25;
+  --lab-line: #2b2f39;
+  --lab-text: #ecedf0;
+  --lab-muted: #9a9ea9;
+  --lab-red: #e10600;
+  --lab-green: #3ec17a;
+  --lab-amber: #e3a82b;
+  color: var(--lab-text);
+  max-width: 1180px;
+  padding: 8px 4px 56px;
+}
+
+.lab h1 { font-size: 1.7rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+.lab h2 { font-size: 1.1rem; margin: 0 0 12px; }
+.lab p.lede { color: var(--lab-muted); margin: 0 0 22px; max-width: 70ch; line-height: 1.55; }
+
+.lab-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 960px) { .lab-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.lab-panel {
+  background: var(--lab-bg);
+  border: 1px solid var(--lab-line);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+}
+.lab-panel.flush { padding: 0; overflow: hidden; }
+.lab-panel .head { padding: 16px 18px 0; }
+
+.lab-scroll { overflow-x: auto; }
+.lab table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.lab th {
+  text-align: left; font-weight: 600; color: var(--lab-muted);
+  padding: 10px 14px; border-bottom: 1px solid var(--lab-line); white-space: nowrap;
+}
+.lab td { padding: 10px 14px; border-bottom: 1px solid var(--lab-line); vertical-align: top; }
+.lab tr:last-child td { border-bottom: 0; }
+.lab td.num, .lab th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.lab pre {
+  margin: 0; padding: 14px 16px; background: var(--lab-bg-2);
+  border-radius: 8px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; color: #cfd2da;
+}
+.lab code { font-size: 0.85em; }
+
+.lab-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lab-form .wide { grid-column: 1 / -1; }
+.lab-field { display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; color: var(--lab-muted); }
+.lab-field input, .lab-field select {
+  background: var(--lab-bg-2); border: 1px solid var(--lab-line); color: var(--lab-text);
+  border-radius: 6px; padding: 9px 10px; font-size: 0.95rem; font-family: inherit;
+}
+.lab-field input:focus-visible, .lab-field select:focus-visible,
+.lab-btn:focus-visible, .lab-seg button:focus-visible { outline: 2px solid var(--lab-red); outline-offset: 2px; }
+
+.lab-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.lab-btn {
+  border: 1px solid var(--lab-line); background: var(--lab-bg-2); color: var(--lab-text);
+  padding: 9px 16px; border-radius: 6px; font-size: 0.9rem; font-family: inherit; cursor: pointer;
+}
+.lab-btn:hover:not(:disabled) { border-color: #4a4f5c; }
+.lab-btn.primary { background: var(--lab-red); border-color: var(--lab-red); color: #fff; font-weight: 600; }
+.lab-btn.primary:hover:not(:disabled) { background: #f01a14; }
+.lab-btn.small { padding: 5px 10px; font-size: 0.8rem; }
+.lab-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.lab-note {
+  margin-top: 16px; padding: 12px 14px; border-radius: 8px; line-height: 1.5;
+  border: 1px solid var(--lab-line); border-left-width: 4px; background: var(--lab-bg-2); font-size: 0.9rem;
+}
+.lab-note.ok { border-left-color: var(--lab-green); }
+.lab-note.blocked { border-left-color: var(--lab-red); }
+.lab-note b { font-weight: 600; }
+.lab-note .counts { color: var(--lab-muted); margin-top: 4px; }
+
+.lab-pill {
+  display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 0.78rem;
+  border: 1px solid var(--lab-line); color: var(--lab-muted);
+}
+.lab-pill.on { color: var(--lab-green); border-color: rgba(62, 193, 122, 0.45); }
+.lab-pill.fast { color: var(--lab-green); border-color: rgba(62, 193, 122, 0.45); }
+.lab-pill.slow { color: var(--lab-red); border-color: rgba(225, 6, 0, 0.5); }
+
+.lab-seg { display: inline-flex; border: 1px solid var(--lab-line); border-radius: 6px; overflow: hidden; }
+.lab-seg button {
+  background: var(--lab-bg-2); color: var(--lab-muted); border: 0; padding: 8px 16px;
+  font-family: inherit; font-size: 0.9rem; cursor: pointer;
+}
+.lab-seg button.active { background: var(--lab-red); color: #fff; font-weight: 600; }
+
+.lab-index-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.lab-index { border: 1px solid var(--lab-line); border-radius: 8px; padding: 14px; background: var(--lab-bg-2); }
+.lab-index .name { font-weight: 600; word-break: break-all; }
+.lab-index .meta { color: var(--lab-muted); font-size: 0.85rem; margin: 6px 0 12px; line-height: 1.45; }
+.lab-index .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+.lab-steps { margin: 0 0 4px; padding-left: 20px; color: var(--lab-muted); line-height: 1.7; font-size: 0.92rem; }
+.lab-steps b { color: var(--lab-text); font-weight: 600; }
+
+.lab-sql { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; color: var(--lab-muted); max-width: 46ch; }
+.lab-muted { color: var(--lab-muted); }
+.lab-empty { padding: 26px 18px; color: var(--lab-muted); }
+.lab-error { color: #ff6b66; margin: 0 0 14px; }
+.lab-timing { font-variant-numeric: tabular-nums; font-weight: 600; }
