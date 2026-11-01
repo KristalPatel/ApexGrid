@@ -195,3 +195,23 @@ export const getRaces = () =>
         })
       )
     : get('/api/races/summary')
+
+
+
+  // ---------------------------------------------------------------
+// PASTE THIS AT THE VERY BOTTOM OF frontend/src/api.js
+// (it uses the existing get() and send() helpers in that file)
+// ---------------------------------------------------------------
+
+// ---------- Section C: views ----------
+export const getViewData = (name) => get(`/api/view/${name}`)
+export const getViewLookups = () => get('/api/view/lookups')
+export const addDriverViaProcedure = (body) => send('/api/view/add-driver', 'POST', body)
+export const removeTestDriver = (id) => send(`/api/view/driver/${id}`, 'DELETE', {})
+export const getAuditTail = () => get('/api/audit/tail')
+
+// ---------- Section B: indexes ----------
+export const getIndexState = () => get('/api/index/state')
+export const createIndex = (name) => send('/api/index/create', 'POST', { name })
+export const dropIndex = (name) => send('/api/index/drop', 'POST', { name })
+export const benchQuery = (id) => send('/api/index/bench', 'POST', { id })
