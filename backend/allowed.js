@@ -41,7 +41,7 @@ export const TABLES = {
   },
   race_result: {
     id: 'result_id',
-    columns: ['result_id', 'race_id', 'driver_id', 'team_id', 'grid_position', 'finishing_position', 'points', 'status'],
+    columns: ['result_id', 'race_id', 'driver_id', 'team_id', 'grid_position', 'finishing_position', 'points', 'status_id'],
   },
   qualifying: {
     id: 'qualifying_id',
@@ -65,7 +65,7 @@ export const TABLES = {
   },
   penalty: {
     id: 'penalty_id',
-    columns: ['penalty_id', 'race_id', 'driver_id', 'penalty_type', 'time_penalty_seconds', 'reason'],
+    columns: ['penalty_id', 'race_id', 'driver_id', 'penalty_type_id', 'time_penalty_seconds', 'reason'],
   },
   driver_standing: {
     id: 'season_id', // composite key (season_id + driver_id)
@@ -90,6 +90,14 @@ export const TABLES = {
   team_sponsor: {
     id: 'team_id', // composite key (team_id + sponsor_id + season_id)
     columns: ['team_id', 'sponsor_id', 'season_id', 'sponsorship_type'],
+  },
+  race_status: {
+    id: 'status_id',
+    columns: ['status_id', 'status_name'],
+  },
+  penalty_type: {
+    id: 'penalty_type_id',
+    columns: ['penalty_type_id', 'type_name'],
   },
   user_login: {
     id: 'user_id',
