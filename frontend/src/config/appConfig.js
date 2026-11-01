@@ -1,4 +1,3 @@
-
 // One place that lists tables, columns and dropdown options.
 // The admin pages read from here, and the backend uses the same names as its "allowed list"
 // (backend/allowed.js). The column names below MUST match allowed.js and the real MySQL tables.
@@ -42,13 +41,8 @@ export const TABLES = {
   },
   race_result: {
     label: 'Race Results',
-    columns: ['result_id', 'race_id', 'driver_id', 'team_id', 'grid_position', 'finishing_position', 'points', 'status_id'],
+    columns: ['result_id', 'race_id', 'driver_id', 'team_id', 'grid_position', 'finishing_position', 'points', 'status'],
     numeric: ['grid_position', 'finishing_position', 'points'],
-  },
-  race_status: {
-    label: 'Race Status (lookup)',
-    columns: ['status_id', 'status_name'],
-    numeric: [],
   },
   qualifying: {
     label: 'Qualifying',
@@ -77,13 +71,8 @@ export const TABLES = {
   },
   penalty: {
     label: 'Penalties',
-    columns: ['penalty_id', 'race_id', 'driver_id', 'penalty_type_id', 'time_penalty_seconds', 'reason'],
+    columns: ['penalty_id', 'race_id', 'driver_id', 'penalty_type', 'time_penalty_seconds', 'reason'],
     numeric: ['time_penalty_seconds'],
-  },
-  penalty_type: {
-    label: 'Penalty Types (lookup)',
-    columns: ['penalty_type_id', 'type_name'],
-    numeric: [],
   },
   driver_standing: {
     label: 'Driver Standings',
