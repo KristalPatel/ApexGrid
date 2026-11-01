@@ -103,31 +103,22 @@ export const runFilter = (table, column, op, value) => {
   return wait(rows)
 }
 
-export const runJoin = (type) => {
-  if (!USE_MOCK) return get(`/api/join?type=${encodeURIComponent(type)}`)
-  // Mock join: driver with team.
-  const rows = mock.drivers.map((d) => {
-    const t = mock.teams.find((x) => x.team_name === d.team_name)
-    return { driver: d.full_name, team: d.team_name, team_chief: t ? t.team_chief : null }
-  })
-  return wait(rows)
-}
+// Q5: which tables can be joined with which.
+export const getJoinLinks = () => (USE_MOCK ? wait({}) : get('/api/join/links'))
 
-export const runSubquery = (option) => {
-  if (!USE_MOCK) return get(`/api/subquery?option=${option}`)
-  if (option === 'winners') return wait(mock.drivers.filter((d) => d.wins > 0))
-  const avg = {}
-  mock.drivers.forEach((d) => {
-    avg[d.team_name] = avg[d.team_name] || []
-    avg[d.team_name].push(d.points)
-  })
-  return wait(
-    mock.drivers.filter((d) => {
-      const list = avg[d.team_name]
-      return d.points > list.reduce((a, b) => a + b, 0) / list.length
-    })
-  )
-}
+// Q5: any two linked tables with a chosen join type.
+export const runJoin = (left, right, type) =>
+  USE_MOCK
+    ? wait([])
+    : get(`/api/join?left=${left}&right=${right}&type=${encodeURIComponent(type)}`)
+
+// Q6: drivers who finished in the top N for a team (subquery over driver, race_result, team).
+export const runTeamFinishers = (team, maxPos) =>
+  USE_MOCK ? wait([]) : get(`/api/subquery/team-finishers?team=${encodeURIComponent(team)}&maxPos=${maxPos}`)
+
+// Q7: drivers above / below their team average in a season (correlated subquery).
+export const runTeamAverage = (year, cmp) =>
+  USE_MOCK ? wait([]) : get(`/api/subquery/team-average?year=${year}&cmp=${cmp}`)
 
 export const getXml = (table) => {
   if (!USE_MOCK) return fetch(`/api/xml/${table}`).then((r) => r.text())

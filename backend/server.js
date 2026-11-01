@@ -3,7 +3,7 @@ import cors from 'cors'
 import bcrypt from 'bcryptjs'
 import 'dotenv/config'
 import pool from './db.js'
-import { TABLES, AGGREGATES, OPERATORS, JOIN_TYPES, okTable, okColumn, okIn } from './allowed.js'
+import { TABLES, AGGREGATES, OPERATORS, JOIN_TYPES, okTable, okColumn, okIn, joinLinks, joinCondition } from './allowed.js'
 
 const app = express()
 app.use(cors({ origin: process.env.FRONTEND_URL || true }))
@@ -104,46 +104,76 @@ app.get('/api/filter', route(async (req) => {
 }))
 
 // ---------- Join (Q5) ----------
-// Driver -> contract -> team. A driver with several contracts appears once per contract.
+// Which tables can be joined with which (taken from the foreign keys in allowed.js).
+app.get('/api/join/links', route(async () => joinLinks()))
+
+// Any two linked tables, with a chosen join type. Every column is renamed table_column
+// so two columns with the same name (like team_id) never overwrite each other.
 app.get('/api/join', route(async (req) => {
   const type = okIn(JOIN_TYPES, req.query.type, 'Join type')
+  const left = req.query.left
+  const right = req.query.right
+  const lt = okTable(left)
+  const rt = okTable(right)
+  if (left === right) throw new Error('Pick two different tables')
+  const on = joinCondition(left, right)
+  if (!on) throw new Error('These two tables are not linked by a foreign key')
+  const cols = [
+    ...lt.columns.map((c) => `l.${c} AS ${left}_${c}`),
+    ...rt.columns.map((c) => `r.${c} AS ${right}_${c}`),
+  ]
   const [rows] = await pool.query(
-    `SELECT CONCAT(d.first_name, ' ', d.last_name) AS driver, t.team_name AS team, t.team_chief
-       FROM driver d
-       ${type} driver_contract c ON c.driver_id = d.driver_id
-       ${type} team t ON t.team_id = c.team_id`
+    `SELECT ${cols.join(', ')} FROM ${left} l ${type} ${right} r ON ${on} LIMIT 500`
   )
   return rows
 }))
 
-// ---------- Subquery (Q6) and correlated subquery (Q7) ----------
-app.get('/api/subquery', route(async (req) => {
-  const option = req.query.option
-  if (option === 'winners') {
-    const [rows] = await pool.query(
-      'SELECT * FROM driver WHERE driver_id IN (SELECT driver_id FROM race_result WHERE finishing_position = 1)'
-    )
-    return rows
-  }
-  if (option === 'above_team_avg') {
-    // Correlated: for each driver's season points, compare with the average of their team in that season.
-    const [rows] = await pool.query(
-      `SELECT d.driver_id, CONCAT(d.first_name, ' ', d.last_name) AS driver, t.team_name AS team,
-              CAST(ds.total_points AS DOUBLE) AS total_points
-         FROM driver_standing ds
-         JOIN driver d ON d.driver_id = ds.driver_id
-         JOIN driver_contract c ON c.driver_id = ds.driver_id AND c.season_id = ds.season_id
-         JOIN team t ON t.team_id = c.team_id
-        WHERE ds.total_points > (
-                SELECT AVG(ds2.total_points)
-                  FROM driver_standing ds2
-                  JOIN driver_contract c2 ON c2.driver_id = ds2.driver_id AND c2.season_id = ds2.season_id
-                 WHERE c2.team_id = c.team_id AND ds2.season_id = ds.season_id)
-        ORDER BY ds.total_points DESC`
-    )
-    return rows
-  }
-  throw new Error('Option not allowed')
+// ---------- Subquery (Q6) ----------
+// Drivers who finished in the top N for a chosen team.
+// Tables used: driver, race_result, team.
+app.get('/api/subquery/team-finishers', route(async (req) => {
+  const maxPos = Number(req.query.maxPos)
+  if (!Number.isInteger(maxPos) || maxPos < 1 || maxPos > 30) throw new Error('Finishing position not allowed')
+  const [rows] = await pool.query(
+    `SELECT driver_id, first_name, last_name, nationality, driver_code
+       FROM driver
+      WHERE driver_id IN (
+              SELECT driver_id FROM race_result
+               WHERE finishing_position <= ?
+                 AND team_id IN (SELECT team_id FROM team WHERE team_name = ?))`,
+    [maxPos, req.query.team]
+  )
+  return rows
+}))
+
+// ---------- Correlated subquery (Q7) ----------
+// Drivers scoring above (or below) the average of their own team in a chosen season.
+// The inner query uses c.team_id from the outer query, so it runs again for every outer row.
+// Tables used: driver_standing, driver, driver_contract, team, season.
+app.get('/api/subquery/team-average', route(async (req) => {
+  const cmp = okIn(['above', 'below'], req.query.cmp, 'Comparison')
+  const op = cmp === 'above' ? '>' : '<'
+  const [rows] = await pool.query(
+    `SELECT d.first_name, d.last_name, t.team_name, CAST(ds.total_points AS DOUBLE) AS total_points,
+            (SELECT ROUND(AVG(ds2.total_points), 1)
+               FROM driver_standing ds2
+               JOIN driver_contract c2 ON c2.driver_id = ds2.driver_id AND c2.season_id = ds2.season_id
+              WHERE c2.team_id = c.team_id AND ds2.season_id = ds.season_id) AS team_average
+       FROM driver_standing ds
+       JOIN season s          ON s.season_id = ds.season_id
+       JOIN driver d          ON d.driver_id = ds.driver_id
+       JOIN driver_contract c ON c.driver_id = ds.driver_id AND c.season_id = ds.season_id
+       JOIN team t            ON t.team_id = c.team_id
+      WHERE s.year = ?
+        AND ds.total_points ${op} (
+              SELECT AVG(ds2.total_points)
+                FROM driver_standing ds2
+                JOIN driver_contract c2 ON c2.driver_id = ds2.driver_id AND c2.season_id = ds2.season_id
+               WHERE c2.team_id = c.team_id AND ds2.season_id = ds.season_id)
+      ORDER BY ds.total_points DESC`,
+    [Number(req.query.year)]
+  )
+  return rows
 }))
 
 // ---------- Home page numbers ----------

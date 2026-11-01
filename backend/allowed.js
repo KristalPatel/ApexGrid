@@ -121,3 +121,66 @@ export function okIn(list, value, label = 'Value') {
   if (!list.includes(value)) throw new Error(`${label} not allowed`)
   return value
 }
+
+// ---------- Foreign-key links, used by the Join page (Q5) ----------
+// One entry per foreign key in the schema: the parent table, the child table,
+// and the column pairs [parent column, child column] that join them.
+// The Join page only offers pairs of tables that appear here.
+export const RELATIONS = [
+  { parent: 'season', child: 'car', on: [['season_id', 'season_id']] },
+  { parent: 'season', child: 'race', on: [['season_id', 'season_id']] },
+  { parent: 'season', child: 'driver_contract', on: [['season_id', 'season_id']] },
+  { parent: 'season', child: 'driver_standing', on: [['season_id', 'season_id']] },
+  { parent: 'season', child: 'constructor_standing', on: [['season_id', 'season_id']] },
+  { parent: 'season', child: 'team_sponsor', on: [['season_id', 'season_id']] },
+  { parent: 'team', child: 'car', on: [['team_id', 'team_id']] },
+  { parent: 'team', child: 'driver_contract', on: [['team_id', 'team_id']] },
+  { parent: 'team', child: 'race_result', on: [['team_id', 'team_id']] },
+  { parent: 'team', child: 'constructor_standing', on: [['team_id', 'team_id']] },
+  { parent: 'team', child: 'team_sponsor', on: [['team_id', 'team_id']] },
+  { parent: 'circuit', child: 'race', on: [['circuit_id', 'circuit_id']] },
+  { parent: 'race', child: 'race_result', on: [['race_id', 'race_id']] },
+  { parent: 'race', child: 'qualifying', on: [['race_id', 'race_id']] },
+  { parent: 'race', child: 'lap', on: [['race_id', 'race_id']] },
+  { parent: 'race', child: 'pit_stop', on: [['race_id', 'race_id']] },
+  { parent: 'race', child: 'penalty', on: [['race_id', 'race_id']] },
+  { parent: 'race', child: 'fastest_lap', on: [['race_id', 'race_id']] },
+  { parent: 'driver', child: 'driver_contract', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'race_result', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'qualifying', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'lap', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'pit_stop', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'penalty', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'driver_standing', on: [['driver_id', 'driver_id']] },
+  { parent: 'driver', child: 'fastest_lap', on: [['driver_id', 'driver_id']] },
+  { parent: 'pit_stop', child: 'pit_stop_tire', on: [['pit_stop_id', 'pit_stop_id']] },
+  { parent: 'tire_compound', child: 'pit_stop_tire', on: [['compound_id', 'compound_id']] },
+  { parent: 'sponsor', child: 'team_sponsor', on: [['sponsor_id', 'sponsor_id']] },
+  {
+    parent: 'lap',
+    child: 'sector_time',
+    on: [['race_id', 'race_id'], ['driver_id', 'driver_id'], ['lap_number', 'lap_number']],
+  },
+]
+
+// table name -> list of tables it can be joined with
+export function joinLinks() {
+  const out = {}
+  for (const name of Object.keys(TABLES)) out[name] = []
+  for (const r of RELATIONS) {
+    if (!out[r.parent].includes(r.child)) out[r.parent].push(r.child)
+    if (!out[r.child].includes(r.parent)) out[r.child].push(r.parent)
+  }
+  return out
+}
+
+// Find the ON clause for two tables (in either direction). Returns null if they are not linked.
+export function joinCondition(left, right) {
+  for (const r of RELATIONS) {
+    if (r.parent === left && r.child === right)
+      return r.on.map(([p, c]) => `l.${p} = r.${c}`).join(' AND ')
+    if (r.parent === right && r.child === left)
+      return r.on.map(([p, c]) => `r.${p} = l.${c}`).join(' AND ')
+  }
+  return null
+}

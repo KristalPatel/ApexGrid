@@ -120,9 +120,11 @@ export const AGGREGATES = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX']
 export const OPERATORS = ['=', '!=', '>', '<', '>=', '<=', 'LIKE']
 export const JOIN_TYPES = ['INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN']
 
-export const SUBQUERY_OPTIONS = [
-  { id: 'winners', label: 'Drivers who have won at least one race (subquery)' },
-  { id: 'above_team_avg', label: 'Drivers scoring above their team average (correlated)' },
+// Q6: "finished in the top N" choices.
+export const POSITION_OPTIONS = [
+  { value: '1', label: 'Won the race (P1)' },
+  { value: '3', label: 'Podium (P3 or better)' },
+  { value: '10', label: 'Scored points (P10 or better)' },
 ]
 
 // Per-team colours. The driver page sets --accent from this, so the whole page recolours.
