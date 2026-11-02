@@ -20,6 +20,8 @@ import Analytics from './admin/Analytics.jsx'
 import QueryBuilder from './admin/QueryBuilder.jsx'
 import IndexLab from './admin/IndexLab.jsx'
 import Views from './admin/Views.jsx'
+import Triggers from './admin/Triggers.jsx'
+import Compare from './pages/Compare.jsx'
 import XmlExport from './admin/XmlExport.jsx'
 
 function load() {
@@ -85,6 +87,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/drivers/:id" element={<DriverDetail />} />
+        <Route path="/compare" element={<Compare />} />
         <Route path="/teams" element={<Teams />} />
         <Route path="/teams/:id" element={<TeamDetail />} />
         <Route path="/races" element={<Races />} />
@@ -102,6 +105,7 @@ export default function App() {
           <Route path="queries" element={<QueryBuilder />} />
           <Route path="index-lab" element={<IndexLab />} />
           <Route path="views" element={<Views />} />
+          <Route path="triggers" element={<Triggers />} />
           <Route path="xml" element={<XmlExport />} />
         </Route>
 

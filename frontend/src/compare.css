@@ -1,0 +1,67 @@
+/* Head-to-head page. Colours come from each driver's team (set inline as --ca and --cb). */
+.cmp-pickers { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: end; margin: 34px 0 28px; }
+.cmp-pickers .vs { font-family: var(--font-head); font-size: 28px; color: var(--muted); padding-bottom: 10px; }
+.cmp-field { display: flex; flex-direction: column; gap: 6px; }
+.cmp-field label { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.cmp-field select {
+  background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px 14px; font-size: 16px; font-family: var(--font-body);
+}
+.cmp-field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.cmp-heads { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cmp-head {
+  position: relative; background: var(--card); border: 1px solid var(--line); border-top: 4px solid var(--c);
+  border-radius: 10px; padding: 22px; display: flex; gap: 18px; align-items: center; min-height: 150px;
+}
+.cmp-head.b { flex-direction: row-reverse; text-align: right; }
+.cmp-photo {
+  width: 104px; height: 104px; border-radius: 50%; flex: none; overflow: hidden; background: var(--bg-2);
+  border: 2px solid var(--c); display: grid; place-items: center; font-family: var(--font-head); font-size: 28px; color: var(--muted);
+}
+.cmp-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.cmp-head h2 { font-size: 34px; line-height: 1.02; }
+.cmp-head h2 span { color: var(--c); }
+.cmp-head .meta { color: var(--muted); font-size: 14px; margin-top: 8px; line-height: 1.5; }
+.cmp-num { font-family: var(--font-head); font-size: 22px; color: var(--c); }
+
+.cmp-panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 22px; margin-top: 16px; }
+.cmp-panel > h3 { font-size: 15px; letter-spacing: 0.18em; color: var(--muted); padding: 16px 0 6px; font-family: var(--font-head); }
+
+.cmp-row { display: grid; grid-template-columns: 1fr 150px 1fr; align-items: center; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+.cmp-row:first-of-type { border-top: 0; }
+.cmp-val { font-family: var(--font-head); font-size: 34px; font-weight: 700; color: var(--muted); }
+.cmp-val.a { text-align: right; }
+.cmp-val.win { color: var(--text); }
+.cmp-val small { font-size: 14px; font-weight: 500; letter-spacing: 0.05em; margin-left: 4px; color: var(--muted); }
+.cmp-label { text-align: center; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.cmp-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 8px; background: var(--bg-2); }
+.cmp-bar i { display: block; height: 100%; }
+.cmp-bar i.a { background: var(--ca); }
+.cmp-bar i.b { background: var(--cb); }
+
+.cmp-gap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 14px 0 22px; }
+.cmp-gap-card { background: var(--bg-2); border-radius: 8px; padding: 18px; border-left: 4px solid var(--c); }
+.cmp-gap-card .big { font-family: var(--font-head); font-size: 44px; font-weight: 800; line-height: 1; }
+.cmp-gap-card .big small { font-size: 16px; color: var(--muted); font-weight: 500; margin-left: 6px; }
+.cmp-gap-card p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-top: 8px; }
+.cmp-gap-card .who { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.cmp-track { height: 8px; border-radius: 4px; background: var(--line); margin-top: 14px; overflow: hidden; }
+.cmp-track i { display: block; height: 100%; background: var(--c); border-radius: 4px; }
+.cmp-summary { text-align: center; font-size: 18px; padding: 4px 0 24px; }
+.cmp-summary b { color: var(--text); }
+.cmp-summary span { color: var(--muted); }
+.cmp-msg { color: var(--muted); margin-top: 24px; }
+.cmp-msg.err { color: #ff6b6b; }
+
+@media (max-width: 760px) {
+  .cmp-pickers { grid-template-columns: 1fr; }
+  .cmp-pickers .vs { display: none; }
+  .cmp-heads, .cmp-gap { grid-template-columns: 1fr; }
+  .cmp-head.b { flex-direction: row; text-align: left; }
+  .cmp-row { grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+  .cmp-mid { grid-column: 1 / -1; order: 3; }
+  .cmp-label { order: -1; }
+  .cmp-val { font-size: 30px; text-align: center; }
+  .cmp-val.a, .cmp-val.b { text-align: center; }
+}

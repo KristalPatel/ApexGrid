@@ -23,6 +23,7 @@ export default function Navbar({ user = null, onLogout }) {
       <NavLink to="/" className="logo">APEX<span>GRID</span></NavLink>
       <nav className="nav-links" aria-label="Main">
         <NavLink to="/drivers">Drivers</NavLink>
+        <NavLink to="/compare">Compare</NavLink>
         <NavLink to="/teams">Teams</NavLink>
         <NavLink to="/races">Races</NavLink>
         <NavLink to="/circuits">Circuits</NavLink>

@@ -159,5 +159,6 @@ export const ADMIN_MENU = [
   { to: '/admin/queries', label: 'Query Builder' },
   { to: '/admin/index-lab', label: 'Index Lab' },
   { to: '/admin/views', label: 'Views' },
+  { to: '/admin/triggers', label: 'Triggers' },
   { to: '/admin/xml', label: 'XML Export' },
 ]

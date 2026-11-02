@@ -80,18 +80,21 @@ app.delete('/api/delete', route(async (req) => {
 }))
 
 // ---------- Aggregate (Q3) ----------
-app.get('/api/aggregate', route(async (req) => {
-  const { table, fn, col } = req.query
+// One helper so the JSON route and the XML route run exactly the same query.
+async function aggregateQuery(table, fn, col) {
   okTable(table)
   okIn(AGGREGATES, fn, 'Function')
   okColumn(table, col)
   const [r] = await pool.query(`SELECT ${fn}(${col}) AS result FROM ${table}`)
-  return { result: r[0].result }
+  return r[0].result
+}
+app.get('/api/aggregate', route(async (req) => {
+  const { table, fn, col } = req.query
+  return { result: await aggregateQuery(table, fn, col) }
 }))
 
 // ---------- Filter with condition (Q4) ----------
-app.get('/api/filter', route(async (req) => {
-  const { table, col, op, val } = req.query
+async function filterQuery(table, col, op, val) {
   const t = okTable(table)
   okColumn(table, col)
   okIn(OPERATORS, op, 'Operator')
@@ -101,6 +104,10 @@ app.get('/api/filter', route(async (req) => {
     [value]
   )
   return rows
+}
+app.get('/api/filter', route(async (req) => {
+  const { table, col, op, val } = req.query
+  return filterQuery(table, col, op, val)
 }))
 
 // ---------- Join (Q5) ----------
@@ -220,6 +227,7 @@ const DRIVER_WITH_TEAM = `
   SELECT d.driver_id, d.first_name, d.last_name,
          DATE_FORMAT(d.date_of_birth, '%Y-%m-%d') AS date_of_birth,
          d.nationality, d.driver_code,
+         TIMESTAMPDIFF(YEAR, d.date_of_birth, CURDATE()) AS age,
          t.team_id, t.team_name, c.car_number,
          ds.wins, CAST(ds.total_points AS DOUBLE) AS points, ds.final_position AS standing_position
     FROM driver d
@@ -239,6 +247,56 @@ const DRIVER_WITH_TEAM = `
 app.get('/api/drivers/summary', route(async () => {
   const [rows] = await pool.query(`${DRIVER_WITH_TEAM} ORDER BY ds.final_position IS NULL, ds.final_position, d.last_name, d.first_name`)
   return rows
+}))
+
+// ---------- Head to head (two drivers) ----------
+// Compares two drivers in the latest season that has standings, and says how far each one is
+// from the championship leader. Uses driver, driver_contract, team, driver_standing and season.
+app.get('/api/compare', route(async (req) => {
+  const a = Number(req.query.a)
+  const b = Number(req.query.b)
+  if (![a, b].every((n) => Number.isInteger(n) && n > 0)) throw new Error('Pick two drivers')
+  if (a === b) throw new Error('Pick two different drivers')
+
+  const [rows] = await pool.query(`${DRIVER_WITH_TEAM} WHERE d.driver_id IN (?, ?)`, [a, b])
+  const byId = Object.fromEntries(rows.map((r) => [r.driver_id, r]))
+  if (!byId[a] || !byId[b]) throw new Error('Driver not found')
+
+  // The leader: most points in the latest season that has standings.
+  const [leaders] = await pool.query(
+    `SELECT d.driver_id, CONCAT(d.first_name, ' ', d.last_name) AS full_name, d.driver_code,
+            CAST(ds.total_points AS DOUBLE) AS points, s.year AS season_year
+       FROM driver_standing ds
+       JOIN season s ON s.season_id = ds.season_id
+       JOIN driver d ON d.driver_id = ds.driver_id
+      WHERE ds.season_id = (SELECT x.season_id FROM driver_standing x
+                              JOIN season s3 ON s3.season_id = x.season_id
+                             ORDER BY s3.year DESC LIMIT 1)
+      ORDER BY ds.total_points DESC LIMIT 1`
+  )
+  const leader = leaders[0] || null
+
+  const shape = (r) => {
+    const points = r.points == null ? null : Number(r.points)
+    const hasGap = leader && points != null
+    return {
+      ...r,
+      full_name: `${r.first_name} ${r.last_name}`,
+      points,
+      is_leader: !!leader && r.driver_id === leader.driver_id,
+      gap_to_leader: hasGap ? Math.round((leader.points - points) * 100) / 100 : null,
+      pct_of_leader: hasGap && leader.points > 0 ? Math.round((points / leader.points) * 1000) / 10 : null,
+    }
+  }
+  const da = shape(byId[a])
+  const db = shape(byId[b])
+  return {
+    season_year: leader ? leader.season_year : null,
+    leader,
+    a: da,
+    b: db,
+    points_gap: da.points != null && db.points != null ? Math.round(Math.abs(da.points - db.points) * 100) / 100 : null,
+  }
 }))
 
 // One driver plus career stats. Returns null when the driver does not exist.
@@ -308,18 +366,67 @@ app.get('/api/races/summary', route(async () => {
   return rows
 }))
 
-// ---------- XML (Section F) ----------
+// ---------- XML (Section F): Q1, Q3 and Q4 ----------
+// Text inside XML must not contain & < > quotes or control characters, so they are escaped.
+const xmlEsc = (v) =>
+  String(v ?? '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+
+// <item> blocks, one per row. Element names come from the allowed list, never from the user.
+const xmlRows = (item, rows) =>
+  rows
+    .map((r) => `  <${item}>\n${Object.entries(r).map(([k, v]) => `    <${k}>${xmlEsc(v)}</${k}>`).join('\n')}\n  </${item}>`)
+    .join('\n')
+
+const XML_HEAD = '<?xml version="1.0" encoding="UTF-8"?>\n'
+const sendXml = (res, text) => res.type('application/xml').send(XML_HEAD + text)
+const xmlFail = (res, e) => res.status(400).type('text/plain').send(e.message)
+
+// These two must stay ABOVE /api/xml/:name, or "aggregate" would be read as a table name.
+// Q3: one aggregate result as XML.
+app.get('/api/xml/aggregate', async (req, res) => {
+  try {
+    const { table, fn, col } = req.query
+    const result = await aggregateQuery(table, fn, col)
+    sendXml(
+      res,
+      `<aggregate>\n  <table>${xmlEsc(table)}</table>\n  <column>${xmlEsc(col)}</column>\n` +
+        `  <function>${xmlEsc(fn)}</function>\n  <result>${xmlEsc(result)}</result>\n</aggregate>`
+    )
+  } catch (e) {
+    xmlFail(res, e)
+  }
+})
+
+// Q4: rows that match a condition, as XML.
+app.get('/api/xml/filter', async (req, res) => {
+  try {
+    const { table, col, op, val } = req.query
+    const rows = await filterQuery(table, col, op, val)
+    sendXml(
+      res,
+      `<${table}s count="${rows.length}" condition="${xmlEsc(`${col} ${op} ${val}`)}">\n${xmlRows(table, rows)}\n</${table}s>`
+    )
+  } catch (e) {
+    xmlFail(res, e)
+  }
+})
+
+// Q1: all rows of one table as XML.
 app.get('/api/xml/:name', async (req, res) => {
   try {
-    const t = okTable(req.params.name)
-    const [rows] = await pool.query(`SELECT ${t.columns.join(', ')} FROM ${req.params.name}`)
-    const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const body = rows
-      .map((r) => `  <${req.params.name}>\n${Object.entries(r).map(([k, v]) => `    <${k}>${esc(v)}</${k}>`).join('\n')}\n  </${req.params.name}>`)
-      .join('\n')
-    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<${req.params.name}s>\n${body}\n</${req.params.name}s>`)
+    const name = req.params.name
+    const t = okTable(name)
+    const [rows] = await pool.query(`SELECT ${t.columns.join(', ')} FROM ${name}`)
+    sendXml(res, `<${name}s count="${rows.length}">\n${xmlRows(name, rows)}\n</${name}s>`)
   } catch (e) {
-    res.status(400).send(e.message)
+    xmlFail(res, e)
   }
 })
 

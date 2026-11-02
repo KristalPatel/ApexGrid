@@ -120,14 +120,30 @@ export const runTeamFinishers = (team, maxPos) =>
 export const runTeamAverage = (year, cmp) =>
   USE_MOCK ? wait([]) : get(`/api/subquery/team-average?year=${year}&cmp=${cmp}`)
 
-export const getXml = (table) => {
-  if (!USE_MOCK) return fetch(`/api/xml/${table}`).then((r) => r.text())
-  const rows = tableData[table] || []
-  const body = rows
-    .map((r) => `  <${table}>\n${Object.entries(r).map(([k, v]) => `    <${k}>${v}</${k}>`).join('\n')}\n  </${table}>`)
-    .join('\n')
-  return wait(`<?xml version="1.0" encoding="UTF-8"?>\n<${table}s>\n${body}\n</${table}s>`)
+// ---------- Head to head ----------
+export const getCompare = (a, b) => (USE_MOCK ? wait(null) : get(`/api/compare?a=${a}&b=${b}`))
+
+// ---------- Section F: XML ----------
+// The backend answers with XML text. When it says no, the plain-text reason is thrown.
+async function getText(url) {
+  const r = await fetch(url)
+  const text = await r.text()
+  if (!r.ok) throw new Error(text || 'Request failed')
+  return text
 }
+
+// Q1: all rows of a table
+export const getXml = (table) => (USE_MOCK ? wait('') : getText(`/api/xml/${table}`))
+
+// Q3: one aggregate result
+export const getXmlAggregate = (table, fn, col) =>
+  USE_MOCK ? wait('') : getText(`/api/xml/aggregate?table=${table}&fn=${fn}&col=${col}`)
+
+// Q4: rows that match a condition
+export const getXmlFilter = (table, col, op, val) =>
+  USE_MOCK
+    ? wait('')
+    : getText(`/api/xml/filter?table=${table}&col=${col}&op=${encodeURIComponent(op)}&val=${encodeURIComponent(val)}`)
 
 // ---------- Driver detail page ----------
 // The real driver table stores first_name / last_name and has no team column.
